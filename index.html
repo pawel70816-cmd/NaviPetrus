@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#102236"><title>NaviPetrus 0.17</title>
+<meta name="theme-color" content="#102236"><title>NaviPetrus 0.18</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#102236;color:#fff}
@@ -101,9 +101,13 @@ body.driving #afterturn.available{display:flex}
 @media(max-width:380px){#afterturn{min-width:70px;max-width:32%;padding-left:6px}#afterarrow{font-size:20px}}
 body.driving #fuelbox{top:calc(env(safe-area-inset-top,0px) + 165px)}
 @media(max-width:380px){#nextturn{top:calc(env(safe-area-inset-top,0px) + 85px)}#turnarrow{font-size:29px}}
-</style></head><body><div id="map"></div>
+/* 0.18: powrót do GPS po ręcznym przesunięciu mapy */
+#recenter{display:none;position:absolute;z-index:530;right:10px;bottom:calc(115px + env(safe-area-inset-bottom,0px));width:48px;height:48px;border-radius:50%;padding:0;background:#eaf3fa;color:#17364e;font-size:25px;box-shadow:0 3px 12px #0008;touch-action:manipulation}
+body.driving #recenter{display:block}
+#recenter.manual{background:#29c2aa;color:#06211e}
+</style></head><body><div id="map"></div><button id="recenter" type="button" title="Wyśrodkuj na GPS i włącz śledzenie" aria-label="Wróć do mojej pozycji GPS">◎</button>
 <div class="panel">
-<h1>🚗 NaviPetrus <small>PROTOTYP 0.17 • TEST</small></h1>
+<h1>🚗 NaviPetrus <small>PROTOTYP 0.18 • TEST</small></h1>
 <div class="fields">
 <input id="start" placeholder="Start: adres lub współrzędne" value="Poznań, Polska">
 <button class="secondary" id="gps" title="Ustaw start z GPS">📍 GPS</button>
@@ -135,7 +139,17 @@ const gpsIcon=L.divIcon({className:'',html:'<div class="gps-dot"></div>',iconSiz
 const status=s=>$('status').textContent=s;
 const speedDisplay=new MutationObserver(()=>{$('topspeedvalue').textContent=$('speedvalue').textContent});
 speedDisplay.observe($('speedvalue'),{childList:true,characterData:true,subtree:true});
-let driving=false;
+let driving=false,followGps=true;
+map.on('dragstart',()=>{
+ if(driving){followGps=false;$('recenter').classList.add('manual');}
+});
+$('recenter').onclick=()=>{
+ if(!gpsPoint){status('Brak pozycji GPS.');return;}
+ followGps=true;
+ $('recenter').classList.remove('manual');
+ map.setView(gpsPoint,Math.max(map.getZoom(),15),{animate:true});
+ status('Mapa wyśrodkowana. Śledzenie pozycji wznowione.');
+};
 let mapBearing=0,hasBearing=false;
 function applyMapBearing(){
  document.body.classList.toggle('bearing-mode',driving&&hasBearing);
@@ -155,7 +169,9 @@ function updateBearing(coords){
  applyMapBearing();
 }
 function setDriving(on){
- driving=on;document.body.classList.toggle('driving',on);
+ driving=on;
+ if(on){followGps=true;$('recenter').classList.remove('manual');}
+ document.body.classList.toggle('driving',on);
  if(!on){hasBearing=false;mapBearing=0;}
  applyMapBearing();
  $('showpanel').style.display=on?'block':'none';
@@ -501,7 +517,7 @@ function updateGps(p){
  if(activeTrip){updateTrip();if(driving&&Number.isFinite(c.accuracy)&&c.accuracy<=35)updateManeuver();}
  if(driving)refreshSpeedLimit(gpsPoint,c.accuracy);
  updateBearing(c);
- if(driving)map.panTo(gpsPoint,{animate:true,duration:.3});
+ if(driving&&followGps)map.panTo(gpsPoint,{animate:true,duration:.3});
  if(firstFix)status('Śledzenie GPS aktywne. Naciśnij „Wyznacz trasę”, aby obliczyć trasę.');
 }
 $('gps').onclick=()=>{
