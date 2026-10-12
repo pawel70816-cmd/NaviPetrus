@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#102236"><title>NaviPetrus 0.2</title>
+<meta name="theme-color" content="#102236"><title>NaviPetrus 0.3</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#102236;color:#fff}
@@ -16,11 +16,11 @@ button.secondary{background:#dbe6f0;color:#142c3f}button.dark{background:#38516b
 #result{font-size:15px;font-weight:700}#status{font-size:12px;color:#d5e6f2;margin-top:6px}
 #saved{font-size:12px;max-height:105px;overflow:auto;margin-top:6px}#saved button{padding:6px;margin:3px;background:#38516b;color:#fff}
 .gps-dot{width:22px;height:22px;background:#1677ff;border:3px solid white;border-radius:50%;box-shadow:0 0 0 2px #1260bf,0 2px 10px #0008}
-#help{display:none;font-size:12px;line-height:1.4;margin-top:7px;color:#d5e6f2}
+#speedbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #ffffff30}#speedvalue{font-size:28px;font-weight:800;font-variant-numeric:tabular-nums}#speedunit{font-size:13px;color:#b6c8d8}#gpsstate{font-size:11px;color:#b6c8d8;text-align:right;max-width:55%}#help{display:none;font-size:12px;line-height:1.4;margin-top:7px;color:#d5e6f2}
 @media(max-height:650px){.panel{padding:8px}.bottom{padding:8px}}
 </style></head><body><div id="map"></div>
 <div class="panel">
-<h1>🚗 NaviPetrus <small>PROTOTYP 0.2 • TEST</small></h1>
+<h1>🚗 NaviPetrus <small>PROTOTYP 0.3 • TEST</small></h1>
 <div class="fields">
 <input id="start" placeholder="Start: adres lub współrzędne" value="Poznań, Polska">
 <button class="secondary" id="gps" title="Ustaw start z GPS">📍 GPS</button>
@@ -28,16 +28,16 @@ button.secondary{background:#dbe6f0;color:#142c3f}button.dark{background:#38516b
 <button class="secondary" id="save" title="Zapisz cel">★ Zapisz</button>
 </div>
 <div class="actions"><button id="route">Wyznacz trasę</button><button class="secondary" id="clear">Wyczyść</button><button class="dark" id="toggle">Pomoc</button></div>
-<div id="help">Wpisz adresy lub współrzędne „szerokość, długość”. Możesz też przytrzymać mapę, aby ustawić cel. GPS wymaga zgody i HTTPS. Niebieska kropka pokazuje ostatni odczyt GPS, nie śledzi ruchu na bieżąco. Po zmianie startu przelicz trasę. To wersja do testów, nie do prowadzenia podczas jazdy. Trasy nie uwzględniają korków ani opłat.</div>
+<div id="help">Wpisz adresy lub współrzędne „szerokość, długość”. Możesz też przytrzymać mapę, aby ustawić cel. GPS wymaga zgody i HTTPS. Po naciśnięciu GPS rozpoczyna się śledzenie pozycji i prędkości. Gdy pomiar prędkości jest niedostępny, widoczne są kreski. iOS może wstrzymać GPS po wygaszeniu ekranu lub przejściu do innej aplikacji. Po zmianie startu przelicz trasę. To wersja do testów, nie do prowadzenia podczas jazdy. Trasy nie uwzględniają korków ani opłat.</div>
 </div>
-<div class="bottom"><div id="result">Gotowe do wyznaczenia trasy</div><div id="status">Mapa i trasy wymagają internetu.</div><div id="saved"></div></div>
+<div class="bottom"><div id="speedbar"><div><span id="speedvalue">—</span> <span id="speedunit">km/h</span></div><div id="gpsstate">GPS nieuruchomiony</div></div><div id="result">Gotowe do wyznaczenia trasy</div><div id="status">Mapa i trasy wymagają internetu.</div><div id="saved"></div></div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 const $=id=>document.getElementById(id);
 const map=L.map('map',{zoomControl:false}).setView([52.4064,16.9252],9);
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',maxZoom:19}).addTo(map);
 L.control.zoom({position:'bottomright'}).addTo(map);
-let line,markers=[],gpsPoint=null,gpsMarker=null,gpsAccuracy=null,routeRequest=0;
+let line,markers=[],gpsPoint=null,gpsMarker=null,gpsAccuracy=null,routeRequest=0,gpsWatch=null,lastGpsTime=0,gpsFixCount=0;
 const gpsIcon=L.divIcon({className:'',html:'<div class="gps-dot"></div>',iconSize:[22,22],iconAnchor:[11,11]});
 const status=s=>$('status').textContent=s;
 const clean=()=>{if(line)map.removeLayer(line);markers.forEach(m=>map.removeLayer(m));markers=[];line=null};
@@ -58,17 +58,54 @@ let km=(t.distance/1000).toFixed(1),min=Math.round(t.duration/60);
 $('result').textContent=`${km} km • ${Math.floor(min/60)} h ${min%60} min`;
 status('Szacunkowy czas bez aktualnych korków. Trasa może zawierać płatne odcinki.');
 }catch(e){if(request===routeRequest)status('Błąd: '+e.message)}finally{if(request===routeRequest)$('route').disabled=false}};
-$('gps').onclick=()=>{if(!navigator.geolocation){status('GPS niedostępny');return}
-status('Pobieram pozycję GPS…');navigator.geolocation.getCurrentPosition(p=>{
-gpsPoint=[p.coords.latitude,p.coords.longitude];$('start').value=gpsPoint.map(v=>v.toFixed(6)).join(', ');
-if(gpsMarker)map.removeLayer(gpsMarker);if(gpsAccuracy)map.removeLayer(gpsAccuracy);
-gpsAccuracy=L.circle(gpsPoint,{radius:Math.max(p.coords.accuracy||0,1),color:'#1677ff',weight:1,fillColor:'#1677ff',fillOpacity:.12,interactive:false}).addTo(map);
-gpsMarker=L.marker(gpsPoint,{icon:gpsIcon,zIndexOffset:1000}).addTo(map).bindPopup('Twoja pozycja GPS');
-map.setView(gpsPoint,Math.max(map.getZoom(),16));
-// Stara trasa została policzona z poprzedniego startu: nie może wyglądać na aktualną.
-routeRequest++;clean();$('route').disabled=false;$('result').textContent='Pozycja GPS ustawiona';
-status('Dokładność około '+Math.round(p.coords.accuracy||0)+' m. Naciśnij „Wyznacz trasę”, aby przeliczyć trasę z GPS.');
-},e=>status('GPS: '+e.message),{enableHighAccuracy:true,timeout:15000,maximumAge:0})};
+// watchPosition działa tylko podczas dostępności lokalizacji dla strony.
+function updateGps(p){
+ const c=p.coords;
+ if(!Number.isFinite(c.latitude)||!Number.isFinite(c.longitude))return;
+ gpsPoint=[c.latitude,c.longitude];
+ lastGpsTime=Date.now();
+ const firstFix=(gpsFixCount++===0);
+ $('start').value=gpsPoint.map(v=>v.toFixed(6)).join(', ');
+ if(gpsMarker)map.removeLayer(gpsMarker);
+ if(gpsAccuracy)map.removeLayer(gpsAccuracy);
+ gpsAccuracy=L.circle(gpsPoint,{radius:Math.max(c.accuracy||0,1),color:'#1677ff',weight:1,fillColor:'#1677ff',fillOpacity:.12,interactive:false}).addTo(map);
+ gpsMarker=L.marker(gpsPoint,{icon:gpsIcon,zIndexOffset:1000}).addTo(map).bindPopup('Twoja pozycja GPS');
+ if(firstFix){
+   map.setView(gpsPoint,Math.max(map.getZoom(),16));
+   routeRequest++;clean();$('route').disabled=false;
+   $('result').textContent='Pozycja GPS ustawiona';
+ }
+ // coords.speed jest w m/s; null oznacza brak pomiaru.
+ const speed=c.speed;
+ $('speedvalue').textContent=Number.isFinite(speed)&&speed>=0
+   ? String(Math.round(speed*3.6)) : '—';
+ $('gpsstate').textContent='GPS aktywny • dokładność '+Math.round(c.accuracy||0)+' m';
+ if(firstFix)status('Śledzenie GPS aktywne. Naciśnij „Wyznacz trasę”, aby obliczyć trasę.');
+}
+$('gps').onclick=()=>{
+ if(!navigator.geolocation){status('GPS niedostępny');return}
+ if(gpsWatch!==null){
+   // Przycisk GPS służy także do powrotu na ostatnią pozycję.
+   if(gpsPoint){map.setView(gpsPoint,Math.max(map.getZoom(),16));status('Mapa wyśrodkowana na ostatniej pozycji GPS.');}
+   return;
+ }
+ gpsFixCount=0;
+ $('gpsstate').textContent='Oczekiwanie na GPS…';
+ status('Uruchamiam śledzenie GPS…');
+ gpsWatch=navigator.geolocation.watchPosition(updateGps,e=>{
+   $('gpsstate').textContent='GPS: brak aktualnego pomiaru';
+   $('speedvalue').textContent='—';
+   status('GPS: '+e.message);
+   // Odmowa dostępu wymaga ponownego uruchomienia po zmianie uprawnień.
+   if(e.code===1){navigator.geolocation.clearWatch(gpsWatch);gpsWatch=null}
+ },{enableHighAccuracy:true,timeout:15000,maximumAge:0});
+};
+setInterval(()=>{
+ if(gpsWatch!==null&&lastGpsTime&&Date.now()-lastGpsTime>15000){
+   $('speedvalue').textContent='—';
+   $('gpsstate').textContent='GPS: oczekiwanie na nowy pomiar';
+ }
+},3000);
 $('clear').onclick=()=>{routeRequest++;clean();$('route').disabled=false;$('result').textContent='Gotowe do wyznaczenia trasy';status('Trasa wyczyszczona. Znacznik GPS pozostaje na mapie.')};
 $('toggle').onclick=()=>$('help').style.display=$('help').style.display==='block'?'none':'block';
 function saved(){let a=JSON.parse(localStorage.getItem('navipetrus_places')||'[]');$('saved').replaceChildren();if(a.length){let t=document.createElement('span');t.textContent='Zapisane cele: ';$('saved').append(t)}a.forEach((x,i)=>{let b=document.createElement('button');b.textContent=x.name;b.onclick=()=>{$('end').value=x.address;status('Wybrano zapisany cel.')};$('saved').append(b)})}
