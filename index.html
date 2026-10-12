@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#102236"><title>NaviPetrus 0.21</title>
+<meta name="theme-color" content="#102236"><title>NaviPetrus 0.21.1</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#102236;color:#fff}
@@ -121,7 +121,7 @@ body:not(.driving) #themebtn{top:calc(env(safe-area-inset-top,0px) + 225px)}
 #diagpanel .hint{color:#c5d6e5;font-size:11px}
 </style></head><body><div id="map"></div><button id="themebtn" type="button" aria-label="Zmień motyw mapy">☾ NOC</button><button id="recenter" type="button" title="Wyśrodkuj na GPS i włącz śledzenie" aria-label="Wróć do mojej pozycji GPS">◎</button>
 <div class="panel">
-<h1>🚗 NaviPetrus <small>PROTOTYP 0.21 • TEST</small></h1>
+<h1>🚗 NaviPetrus <small>PROTOTYP 0.21.1 • TEST</small></h1>
 <div class="fields">
 <input id="start" placeholder="Start: adres lub współrzędne" value="Poznań, Polska">
 <button class="secondary" id="gps" title="Ustaw start z GPS">📍 GPS</button>
@@ -286,20 +286,20 @@ async function loadFuel(){
  $('fuelitems').textContent='Szukam stacji w OpenStreetMap…';
  // 0.10: małe odcinki korytarza zamiast jednego olbrzymiego prostokąta.
  // Szukamy w pierwszych ~30 km trasy; kolejne po odświeżeniu / zmianie pozycji.
- const current=fuelProgress(),limit=current+30000;
+ const current=fuelProgress(),limit=current+12000;
  const samples=[];let traveled=0,lastSample=-10000;
  for(let i=0;i<trip.points.length;i++){
    if(i>0)traveled+=trip.segments[i-1];
    if(traveled<Math.max(0,current-1000)||traveled>limit)continue;
-   if(traveled-lastSample>=3500){samples.push(trip.points[i]);lastSample=traveled;}
+   if(traveled-lastSample>=1800){samples.push(trip.points[i]);lastSample=traveled;}
  }
  if(!samples.length) samples.push(trip.points[0]);
- const parts=samples.slice(0,12).map(p=>`node(around:3000,${p[0]},${p[1]})["amenity"="fuel"];way(around:3000,${p[0]},${p[1]})["amenity"="fuel"];`).join('');
- const query=`[out:json][timeout:20];(${parts});out center 200;`;
- const endpoints=['https://overpass.private.coffee/api/interpreter','https://overpass.kumi.systems/api/interpreter','https://overpass.nchc.org.tw/api/interpreter'];
+ const parts=samples.slice(0,7).map(p=>`node(around:1800,${p[0]},${p[1]})["amenity"="fuel"];way(around:1800,${p[0]},${p[1]})["amenity"="fuel"];`).join('');
+ const query=`[out:json][timeout:12];(${parts});out center 80;`;
+ const endpoints=['https://overpass-api.de/api/interpreter','https://overpass.private.coffee/api/interpreter','https://overpass.kumi.systems/api/interpreter'];
  const fuelLog=[];
  const fuelInfo=(message)=>{if(request===fuelRequest&&trip===activeTrip)$('fuelitems').textContent=message};
- fuelInfo('⛽ Szukam: '+samples.length+' punktów trasy, do 30 km…');
+ fuelInfo('⛽ Szukam: '+Math.min(samples.length,7)+' punktów trasy, pierwsze 12 km…');
  try{
    let json=null;
    for(let i=0;i<endpoints.length;i++){
@@ -307,10 +307,10 @@ async function loadFuel(){
      const endpoint=endpoints[i];
      const host=new URL(endpoint).hostname;
      const controller=new AbortController();
-     const timer=setTimeout(()=>controller.abort(),11000);
+     const timer=setTimeout(()=>controller.abort(),15000);
      fuelInfo('⛽ Sprawdzam serwer '+(i+1)+'/'+endpoints.length+': '+host);
      try{
-       const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'data='+encodeURIComponent(query),signal:controller.signal});
+       const response=await fetch(endpoint+'?data='+encodeURIComponent(query),{method:'GET',signal:controller.signal});
        if(!response.ok)throw Error('HTTP '+response.status);
        const result=await response.json();
        if(!Array.isArray(result.elements))throw Error('nieprawidłowa odpowiedź');
@@ -318,7 +318,7 @@ async function loadFuel(){
        fuelLog.push(host+': OK ('+result.elements.length+' obiektów)');
        break;
      }catch(e){
-       fuelLog.push(host+': '+(e.name==='AbortError'?'limit 11 s':(e.message||'błąd')));
+       fuelLog.push(host+': '+(e.name==='AbortError'?'limit 15 s':(e.message||'błąd')));
      }finally{clearTimeout(timer)}
    }
    if(!json)throw Error('Wszystkie serwery niedostępne');
@@ -328,13 +328,13 @@ async function loadFuel(){
      const lat=el.lat??el.center?.lat,lon=el.lon??el.center?.lon;
      if(!Number.isFinite(lat)||!Number.isFinite(lon))continue;
      const near=distanceToPolyline([lat,lon],trip);
-     if(near.error>3000||near.progress+250<current||near.progress>limit)continue;
+     if(near.error>1800||near.progress+250<current||near.progress>limit)continue;
      const key=`${lat.toFixed(3)},${lon.toFixed(3)}`;if(seen.has(key))continue;seen.add(key);
      candidates.push({lat,lon,name:el.tags?.name||el.tags?.brand||'Stacja paliw',progress:near.progress,offset:near.error});
    }
    candidates.sort((a,b)=>a.progress-b.progress||a.offset-b.offset);
    const top=candidates.slice(0,3);
-   if(!top.length){$('fuelitems').textContent='Serwer odpowiedział ('+(json.elements||[]).length+' obiektów), ale brak stacji spełniających filtr do 30 km trasy. '+fuelLog.join(' | ');return}
+   if(!top.length){$('fuelitems').textContent='Serwer odpowiedział ('+(json.elements||[]).length+' obiektów), ale brak stacji spełniających filtr do 12 km trasy. '+fuelLog.join(' | ');return}
    $('fuelitems').replaceChildren();
    for(const st of top){
      const row=document.createElement('div');row.className='fuelrow';
