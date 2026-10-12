@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#102236"><title>NaviPetrus 0.21.2</title>
+<meta name="theme-color" content="#102236"><title>NaviPetrus 0.21.3</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#102236;color:#fff}
@@ -121,7 +121,7 @@ body:not(.driving) #themebtn{top:calc(env(safe-area-inset-top,0px) + 225px)}
 #diagpanel .hint{color:#c5d6e5;font-size:11px}
 </style></head><body><div id="map"></div><button id="themebtn" type="button" aria-label="Zmień motyw mapy">☾ NOC</button><button id="recenter" type="button" title="Wyśrodkuj na GPS i włącz śledzenie" aria-label="Wróć do mojej pozycji GPS">◎</button>
 <div class="panel">
-<h1>🚗 NaviPetrus <small>PROTOTYP 0.21.2 • TEST</small></h1>
+<h1>🚗 NaviPetrus <small>PROTOTYP 0.21.3 • TEST</small></h1>
 <div class="fields">
 <input id="start" placeholder="Start: adres lub współrzędne" value="Poznań, Polska">
 <button class="secondary" id="gps" title="Ustaw start z GPS">📍 GPS</button>
@@ -130,7 +130,7 @@ body:not(.driving) #themebtn{top:calc(env(safe-area-inset-top,0px) + 225px)}
 </div>
 
 <div class="actions"><button id="route">Wyznacz trasę</button><button id="drive" style="display:none">▶ START</button><button class="secondary" id="clear">Wyczyść</button><button class="dark" id="toggle">Pomoc</button><button id="diagbtn" type="button">Diagnostyka</button></div>
-<div id="help">Przycisk Diagnostyka pokazuje aktualność GPS, dokładność, kierunek, prędkość i odchylenie od trasy. Przycisk DZIEŃ/NOC zmienia ręcznie jasność i kolory kafelków mapy (motyw jest zapamiętywany w przeglądarce). Wpisz adresy lub współrzędne „szerokość, długość”. Możesz też przytrzymać mapę, aby ustawić cel. GPS wymaga zgody i HTTPS. Po naciśnięciu GPS rozpoczyna się śledzenie pozycji i prędkości. W trybie START prędkość i znak są u góry, a na dole godzina przyjazdu, czas i dystans. Podczas ruchu (od około 9 km/h) mapa próbuje obracać się według kierunku GPS. Jeśli telefon nie udostępnia kierunku, mapa pozostaje północą do góry. To eksperymentalny obrót widoku, bez pełnego map-matchingu. Pasek manewru pokazuje orientacyjną odległość i kierunek kolejnego skrętu oraz podgląd następnego manewru („POTEM”), gdy dane są dostępne na podstawie danych trasowania; nie zastępuje znaków drogowych. Bez aktualnego GPS manewr nie jest śledzony. Po wybraniu „Wyznacz trasę” wybierz „Płatne” lub „Omijaj płatne”. Po obliczeniu trasy użyj START, aby schować panel i śledzić pozycję na mapie. Znak przy przycisku Menu pokazuje tylko dostępne, orientacyjne dane OpenStreetMap; znak drogowy ma pierwszeństwo. Przycisk Menu ponownie otwiera panel. Gdy pomiar prędkości jest niedostępny, widoczne są kreski. iOS może wstrzymać GPS po wygaszeniu ekranu lub przejściu do innej aplikacji. Po wyznaczeniu trasy i uruchomieniu GPS dolny panel pokazuje szacunkowe pozostałe kilometry, czas i godzinę przyjazdu. Wartości są obliczane z postępu na zaplanowanej trasie, bez korków. Przy zjechaniu z trasy trzeba ją przeliczyć. Po zmianie startu przelicz trasę. Stacje paliw są pobierane z OpenStreetMap. W wersji 0.21.2 testowo szukamy stacji do 5 km w linii prostej od GPS lub początku trasy, pokazując maksymalnie pięć; dostępność zjazdu, kierunek dojazdu, rzeczywista długość objazdu i otwarcie stacji NIE są jeszcze sprawdzane. Nie wybieraj zjazdu bez sprawdzenia znaków i bezpiecznej trasy. To wersja do testów, nie do prowadzenia podczas jazdy. Tryb „Płatne” używa OSRM i nie filtruje dróg płatnych. Tryb „Omijaj płatne” próbuje wyznaczyć trasę przez usługę Valhalla z opcją exclude_tolls; nie gwarantuje uniknięcia każdej opłaty ani uwzględnienia aktualnych przepisów. Jeżeli usługa jest niedostępna, aplikacja zgłosi błąd zamiast po cichu wyznaczać trasę płatną. Zawsze sprawdź znaki i opłaty. Trasy nie uwzględniają korków.</div>
+<div id="help">Przycisk Diagnostyka pokazuje aktualność GPS, dokładność, kierunek, prędkość i odchylenie od trasy. Przycisk DZIEŃ/NOC zmienia ręcznie jasność i kolory kafelków mapy (motyw jest zapamiętywany w przeglądarce). Wpisz adresy lub współrzędne „szerokość, długość”. Możesz też przytrzymać mapę, aby ustawić cel. GPS wymaga zgody i HTTPS. Po naciśnięciu GPS rozpoczyna się śledzenie pozycji i prędkości. W trybie START prędkość i znak są u góry, a na dole godzina przyjazdu, czas i dystans. Podczas ruchu (od około 9 km/h) mapa próbuje obracać się według kierunku GPS. Jeśli telefon nie udostępnia kierunku, mapa pozostaje północą do góry. To eksperymentalny obrót widoku, bez pełnego map-matchingu. Pasek manewru pokazuje orientacyjną odległość i kierunek kolejnego skrętu oraz podgląd następnego manewru („POTEM”), gdy dane są dostępne na podstawie danych trasowania; nie zastępuje znaków drogowych. Bez aktualnego GPS manewr nie jest śledzony. Po wybraniu „Wyznacz trasę” wybierz „Płatne” lub „Omijaj płatne”. Po obliczeniu trasy użyj START, aby schować panel i śledzić pozycję na mapie. Znak przy przycisku Menu pokazuje tylko dostępne, orientacyjne dane OpenStreetMap; znak drogowy ma pierwszeństwo. Przycisk Menu ponownie otwiera panel. Gdy pomiar prędkości jest niedostępny, widoczne są kreski. iOS może wstrzymać GPS po wygaszeniu ekranu lub przejściu do innej aplikacji. Po wyznaczeniu trasy i uruchomieniu GPS dolny panel pokazuje szacunkowe pozostałe kilometry, czas i godzinę przyjazdu. Wartości są obliczane z postępu na zaplanowanej trasie, bez korków. Przy zjechaniu z trasy trzeba ją przeliczyć. Po zmianie startu przelicz trasę. Stacje paliw są testowo wyszukiwane przez Nominatim (OpenStreetMap); wyniki mogą być niekompletne. W wersji 0.21.3 szukamy stacji do 5 km w linii prostej od GPS lub początku trasy, pokazując maksymalnie pięć; dostępność zjazdu, kierunek dojazdu, rzeczywista długość objazdu i otwarcie stacji NIE są jeszcze sprawdzane. Nie wybieraj zjazdu bez sprawdzenia znaków i bezpiecznej trasy. To wersja do testów, nie do prowadzenia podczas jazdy. Tryb „Płatne” używa OSRM i nie filtruje dróg płatnych. Tryb „Omijaj płatne” próbuje wyznaczyć trasę przez usługę Valhalla z opcją exclude_tolls; nie gwarantuje uniknięcia każdej opłaty ani uwzględnienia aktualnych przepisów. Jeżeli usługa jest niedostępna, aplikacja zgłosi błąd zamiast po cichu wyznaczać trasę płatną. Zawsze sprawdź znaki i opłaty. Trasy nie uwzględniają korków.</div>
 </div>
 <button id="showpanel" class="secondary" aria-label="Otwórz panel" style="display:none">☰ Menu</button><div id="toplimit" aria-label="Orientacyjne ograniczenie prędkości OSM"><span id="limitSign" class="unknown">?</span><div id="topspeed"><strong id="topspeedvalue">—</strong><small>km/h</small></div></div>
 <div id="nextturn" aria-live="off"><span id="turnarrow">↑</span><div id="turndetails"><div id="turndistance">—</div><div id="turnstreet">Oczekiwanie na trasę</div></div><div id="afterturn"><span id="afterarrow">↑</span><div id="afterdetails"><div id="afterlabel">POTEM</div><div id="afterdistance">—</div><div id="afterstreet">—</div></div></div></div>
@@ -284,54 +284,45 @@ async function loadFuel(){
  const request=++fuelRequest,trip=activeTrip;
  $('fuelbox').classList.add('active');
  const fuelInfo=message=>{if(request===fuelRequest&&trip===activeTrip)$('fuelitems').textContent=message};
- // 0.21.2: pojedyncze zapytanie punktowe, bez złożonego korytarza trasy.
- // Pozycja GPS, a jeśli niedostępna — początek wyznaczonej trasy.
- const origin=(gpsPoint&&Date.now()-lastGpsTime<30000)?gpsPoint:trip.points[0];
+ // 0.21.3: alternatywne wyszukiwanie przez Nominatim, bez Overpass.
+ // Wyniki orientacyjne i niekompletne; tylko pojedyncze zapytanie na żądanie.
+ const useGps=!!(gpsPoint&&Date.now()-lastGpsTime<30000);
+ const origin=useGps?gpsPoint:trip.points[0];
  const radius=5000;
- const query=`[out:json][timeout:15];nwr(around:${radius},${origin[0]},${origin[1]})["amenity"="fuel"];out center;`;
- const endpoints=['https://overpass.kumi.systems/api/interpreter','https://overpass.private.coffee/api/interpreter','https://overpass-api.de/api/interpreter'];
- const fuelLog=[];
- fuelInfo('⛽ Test punktowy: stacje do 5 km od '+(origin===gpsPoint?'GPS':'początku trasy')+'…');
+ const latSpan=radius/111320,lonSpan=radius/(111320*Math.max(.2,Math.cos(origin[0]*Math.PI/180)));
+ const west=origin[1]-lonSpan,east=origin[1]+lonSpan,north=origin[0]+latSpan,south=origin[0]-latSpan;
+ const params=new URLSearchParams({format:'jsonv2',q:'[fuel]',viewbox:[west,north,east,south].join(','),bounded:'1',limit:'40',addressdetails:'0'});
+ fuelInfo('⛽ Test 0.21.3: inne źródło danych, do 5 km od '+(useGps?'GPS':'startu trasy')+'…');
+ const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),16000);
  try{
-  let json=null;
-  for(let i=0;i<endpoints.length;i++){
-   if(request!==fuelRequest||trip!==activeTrip)return;
-   const endpoint=endpoints[i],host=new URL(endpoint).hostname;
-   const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),18000);
-   fuelInfo('⛽ Test 5 km • serwer '+(i+1)+'/3: '+host);
-   try{
-    const response=await fetch(endpoint+'?data='+encodeURIComponent(query),{method:'GET',signal:controller.signal});
-    if(!response.ok)throw Error('HTTP '+response.status);
-    const result=await response.json();
-    if(!Array.isArray(result.elements))throw Error('nieprawidłowa odpowiedź');
-    json=result;fuelLog.push(host+': OK, '+result.elements.length+' obiektów');break;
-   }catch(e){fuelLog.push(host+': '+(e.name==='AbortError'?'limit 18 s':e.message||'błąd'))}
-   finally{clearTimeout(timer)}
-  }
-  if(!json)throw Error('Brak odpowiedzi serwerów');
+  const response=await fetch('https://nominatim.openstreetmap.org/search?'+params.toString(),{headers:{'Accept-Language':'pl'},signal:controller.signal});
+  if(!response.ok)throw Error('HTTP '+response.status);
+  const result=await response.json();
+  if(!Array.isArray(result))throw Error('nieprawidłowa odpowiedź');
   if(request!==fuelRequest||trip!==activeTrip)return;
-  const seen=new Set(),stations=[];
-  for(const el of json.elements){
-   const lat=el.lat??el.center?.lat,lon=el.lon??el.center?.lon;
+  const stations=[],seen=new Set();
+  for(const el of result){
+   const lat=Number(el.lat),lon=Number(el.lon);
    if(!Number.isFinite(lat)||!Number.isFinite(lon))continue;
-   const distance=meters(origin,[lat,lon]);
-   if(distance>radius)continue;
+   const distance=meters(origin,[lat,lon]);if(distance>radius)continue;
    const key=lat.toFixed(4)+','+lon.toFixed(4);if(seen.has(key))continue;seen.add(key);
-   stations.push({lat,lon,distance,name:el.tags?.name||el.tags?.brand||'Stacja paliw'});
+   const raw=el.name||el.display_name?.split(',')[0]||'Stacja paliw';
+   stations.push({lat,lon,distance,name:raw});
   }
   stations.sort((a,b)=>a.distance-b.distance);
   $('fuelitems').replaceChildren();
-  if(!stations.length){fuelInfo('Serwer odpowiedział, lecz nie zwrócił stacji w promieniu 5 km. '+fuelLog.join(' | '));return}
+  if(!stations.length){fuelInfo('Nominatim odpowiedział, ale nie znalazł stacji w promieniu 5 km. To źródło może pomijać obiekty. Wyników: '+result.length);return}
   for(const st of stations.slice(0,5)){
    const row=document.createElement('div');row.className='fuelrow';
    const name=document.createElement('b');name.textContent=st.name;
-   const info=document.createElement('small');info.textContent='ok. '+(st.distance/1000).toFixed(1)+' km w linii prostej od '+(origin===gpsPoint?'GPS':'startu trasy');
+   const info=document.createElement('small');info.textContent='ok. '+(st.distance/1000).toFixed(1)+' km w linii prostej od '+(useGps?'GPS':'startu trasy');
    row.append(name,info);$('fuelitems').append(row);
    const marker=L.circleMarker([st.lat,st.lon],{radius:7,color:'#fff',weight:2,fillColor:'#e59b15',fillOpacity:.95}).addTo(map);
-   marker.bindPopup('⛽ '+st.name+'<br>Odległość w linii prostej; dojazd niezweryfikowany');fuelMarkers.push(marker);
+   marker.bindPopup('⛽ '+st.name.replaceAll('&','&amp;').replaceAll('<','&lt;')+'<br>Dojazd niezweryfikowany');fuelMarkers.push(marker);
   }
-  const note=document.createElement('small');note.textContent='TEST 0.21.2 • '+stations.length+' stacji w promieniu 5 km • '+fuelLog.join(' | ');$('fuelitems').append(note);
- }catch(e){fuelInfo('Test punktowy nieudany: '+e.message+'. '+fuelLog.join(' | '));}
+  const note=document.createElement('small');note.textContent='TEST 0.21.3 • Nominatim • '+stations.length+' wyników do 5 km; lista może być niepełna';$('fuelitems').append(note);
+ }catch(e){if(request===fuelRequest&&trip===activeTrip)fuelInfo('Nominatim: '+(e.name==='AbortError'?'limit 16 s':e.message||'błąd')+'. Dane stacji nadal niedostępne.');}
+ finally{clearTimeout(timer)}
 }
 $('fuelrefresh').onclick=()=>{fuelMarkers.forEach(m=>map.removeLayer(m));fuelMarkers=[];loadFuel()};
 const point=s=>{let m=s.trim().match(/^(-?\d+(?:\.\d+)?)\s*[,;]\s*(-?\d+(?:\.\d+)?)$/);if(!m)return null;let a=+m[1],b=+m[2];return Math.abs(a)<=90&&Math.abs(b)<=180?[a,b]:null};
