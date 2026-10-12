@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#102236"><title>NaviPetrus 0.15</title>
+<meta name="theme-color" content="#102236"><title>NaviPetrus 0.16</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#102236;color:#fff}
@@ -103,7 +103,7 @@ body.driving #fuelbox{top:calc(env(safe-area-inset-top,0px) + 165px)}
 @media(max-width:380px){#nextturn{top:calc(env(safe-area-inset-top,0px) + 85px)}#turnarrow{font-size:29px}}
 </style></head><body><div id="map"></div>
 <div class="panel">
-<h1>🚗 NaviPetrus <small>PROTOTYP 0.15 • TEST</small></h1>
+<h1>🚗 NaviPetrus <small>PROTOTYP 0.16 • TEST</small></h1>
 <div class="fields">
 <input id="start" placeholder="Start: adres lub współrzędne" value="Poznań, Polska">
 <button class="secondary" id="gps" title="Ustaw start z GPS">📍 GPS</button>
@@ -203,7 +203,7 @@ function updateTrip(){
  $('remaintime').textContent=durationLabel(duration);
  $('arrival').textContent=new Date(Date.now()+duration*1000).toLocaleTimeString('pl-PL',{hour:'2-digit',minute:'2-digit'});
 }
-function clearTrip(){showTurn("↑","—","Oczekiwanie na trasę");fuelRequest++;fuelMarkers.forEach(m=>map.removeLayer(m));fuelMarkers=[];$('fuelbox').classList.remove('active');activeTrip=null;$('tripbar').classList.remove('active')}
+function clearTrip(){navTrack=null;showAfter(null);showTurn("↑","—","Oczekiwanie na trasę");fuelRequest++;fuelMarkers.forEach(m=>map.removeLayer(m));fuelMarkers=[];$('fuelbox').classList.remove('active');activeTrip=null;$('tripbar').classList.remove('active')}
 // 0.5: punkty amenity=fuel z OSM, bez punktów wyłącznie ładowania EV.
 // To przybliżenie bliskości trasy, NIE potwierdzenie dostępnego zjazdu.
 function distanceToPolyline(pos,trip){
@@ -334,6 +334,7 @@ markers=[L.marker(a).addTo(map).bindPopup('Start'),L.marker(b).addTo(map).bindPo
 map.fitBounds(line.getBounds(),{padding:[35,35]});
 const pts=t.geometry.coordinates.map(p=>[p[1],p[0]]);
 const segments=pts.slice(1).map((p,i)=>meters(pts[i],p));
+navTrack=null;
 activeTrip={points:pts,segments,geometryLength:segments.reduce((a,b)=>a+b,0),distance:t.distance,duration:t.duration,maneuvers:[]};
  // Przypnij manewry do odległości wzdłuż geometrii wyznaczonej trasy.
  const cumul=[0];for(const seg of segments)cumul.push(cumul[cumul.length-1]+seg);
@@ -367,16 +368,35 @@ function turnSymbol(m){
  if([15,16].includes(t))return '↶';
  return '↑';
 }
+// 0.16: stabilizacja postępu, aby szum GPS nie cofał manewrów.
+let navTrack=null;
+function trackedProgress(near){
+ if(!navTrack){navTrack={progress:near.progress,confirmed:near.progress,at:Date.now()};return near.progress;}
+ // Pozycja daleko od trasy nie może przesuwać wskazówek.
+ if(near.error>35)return navTrack.confirmed;
+ const now=Date.now();
+ // Odrzucaj drobne cofnięcia GPS; większe cofnięcie przyjmij dopiero po dłuższym czasie.
+ if(near.progress>=navTrack.confirmed){
+   navTrack.confirmed=near.progress;
+ }else if(navTrack.confirmed-near.progress>75&&now-navTrack.at>20000){
+   navTrack.confirmed=near.progress;
+ }
+ navTrack.at=now;
+ return navTrack.confirmed;
+}
 function updateManeuver(){
  showAfter(null);
  if(!activeTrip){showTurn('↑','—','Brak trasy');return;}
  if(!gpsPoint||Date.now()-lastGpsTime>20000){showTurn('↑','GPS','Oczekiwanie na pozycję');return;}
  const near=nearestOnRoute(gpsPoint,activeTrip);
  if(near.error>100){showTurn('⚠','Poza trasą','Przelicz trasę');return;}
- const upcoming=activeTrip.maneuvers.filter(m=>m.progress>near.progress+12&&m.progress<activeTrip.geometryLength-10);
+ const progress=trackedProgress(near);
+ // Gdy jesteśmy przy skrzyżowaniu, zachowaj manewr aż do minięcia go
+ // o 20 m; następnie automatycznie pokaż kolejny.
+ const upcoming=activeTrip.maneuvers.filter(m=>m.progress>progress-20&&m.progress<activeTrip.geometryLength-10);
  const next=upcoming[0];
  if(!next){showTurn('↑','Prosto do celu','Brak kolejnego manewru');return;}
- const remaining=Math.max(0,next.progress-near.progress);
+ const remaining=Math.max(0,next.progress-progress);
  const distance=remaining<1000?Math.max(10,Math.round(remaining/10)*10)+' m':(remaining/1000).toFixed(1).replace('.',',')+' km';
  showTurn(turnSymbol(next),distance,next.name?('w '+next.name):'Kolejny manewr');
  // Podgląd następnego manewru po aktualnym, bez zgadywania odległości między skrętami.
@@ -458,7 +478,7 @@ function updateGps(p){
  $('speedvalue').textContent=Number.isFinite(speed)&&speed>=0
    ? String(Math.round(speed*3.6)) : '—';
  $('gpsstate').textContent='GPS aktywny • dokładność '+Math.round(c.accuracy||0)+' m';
- if(activeTrip){updateTrip();if(driving)updateManeuver();}
+ if(activeTrip){updateTrip();if(driving&&Number.isFinite(c.accuracy)&&c.accuracy<=35)updateManeuver();}
  if(driving)refreshSpeedLimit(gpsPoint,c.accuracy);
  if(driving)map.panTo(gpsPoint,{animate:true,duration:.3});
  if(firstFix)status('Śledzenie GPS aktywne. Naciśnij „Wyznacz trasę”, aby obliczyć trasę.');
