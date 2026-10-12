@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#102236"><title>NaviPetrus 0.20.1</title>
+<meta name="theme-color" content="#102236"><title>NaviPetrus 0.21</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#102236;color:#fff}
@@ -121,7 +121,7 @@ body:not(.driving) #themebtn{top:calc(env(safe-area-inset-top,0px) + 225px)}
 #diagpanel .hint{color:#c5d6e5;font-size:11px}
 </style></head><body><div id="map"></div><button id="themebtn" type="button" aria-label="Zmień motyw mapy">☾ NOC</button><button id="recenter" type="button" title="Wyśrodkuj na GPS i włącz śledzenie" aria-label="Wróć do mojej pozycji GPS">◎</button>
 <div class="panel">
-<h1>🚗 NaviPetrus <small>PROTOTYP 0.20.1 • TEST</small></h1>
+<h1>🚗 NaviPetrus <small>PROTOTYP 0.21 • TEST</small></h1>
 <div class="fields">
 <input id="start" placeholder="Start: adres lub współrzędne" value="Poznań, Polska">
 <button class="secondary" id="gps" title="Ustaw start z GPS">📍 GPS</button>
@@ -297,17 +297,31 @@ async function loadFuel(){
  const parts=samples.slice(0,12).map(p=>`node(around:3000,${p[0]},${p[1]})["amenity"="fuel"];way(around:3000,${p[0]},${p[1]})["amenity"="fuel"];`).join('');
  const query=`[out:json][timeout:20];(${parts});out center 200;`;
  const endpoints=['https://overpass.private.coffee/api/interpreter','https://overpass.kumi.systems/api/interpreter','https://overpass.nchc.org.tw/api/interpreter'];
- const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),16000);
+ const fuelLog=[];
+ const fuelInfo=(message)=>{if(request===fuelRequest&&trip===activeTrip)$('fuelitems').textContent=message};
+ fuelInfo('⛽ Szukam: '+samples.length+' punktów trasy, do 30 km…');
  try{
    let json=null;
-   for(const endpoint of endpoints){
+   for(let i=0;i<endpoints.length;i++){
+     if(request!==fuelRequest||trip!==activeTrip)return;
+     const endpoint=endpoints[i];
+     const host=new URL(endpoint).hostname;
+     const controller=new AbortController();
+     const timer=setTimeout(()=>controller.abort(),11000);
+     fuelInfo('⛽ Sprawdzam serwer '+(i+1)+'/'+endpoints.length+': '+host);
      try{
        const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'data='+encodeURIComponent(query),signal:controller.signal});
        if(!response.ok)throw Error('HTTP '+response.status);
-       json=await response.json();break;
-     }catch(e){if(controller.signal.aborted)break;}
+       const result=await response.json();
+       if(!Array.isArray(result.elements))throw Error('nieprawidłowa odpowiedź');
+       json=result;
+       fuelLog.push(host+': OK ('+result.elements.length+' obiektów)');
+       break;
+     }catch(e){
+       fuelLog.push(host+': '+(e.name==='AbortError'?'limit 11 s':(e.message||'błąd')));
+     }finally{clearTimeout(timer)}
    }
-   if(!json)throw Error('Nie można pobrać danych ze źródeł OSM');
+   if(!json)throw Error('Wszystkie serwery niedostępne');
    if(request!==fuelRequest||trip!==activeTrip)return;
    const seen=new Set();let candidates=[];
    for(const el of json.elements||[]){
@@ -320,7 +334,7 @@ async function loadFuel(){
    }
    candidates.sort((a,b)=>a.progress-b.progress||a.offset-b.offset);
    const top=candidates.slice(0,3);
-   if(!top.length){$('fuelitems').textContent='Brak znalezionych stacji w najbliższych 30 km trasy.';return}
+   if(!top.length){$('fuelitems').textContent='Serwer odpowiedział ('+(json.elements||[]).length+' obiektów), ale brak stacji spełniających filtr do 30 km trasy. '+fuelLog.join(' | ');return}
    $('fuelitems').replaceChildren();
    for(const st of top){
      const row=document.createElement('div');row.className='fuelrow';
@@ -331,9 +345,8 @@ async function loadFuel(){
      const marker=L.circleMarker([st.lat,st.lon],{radius:7,color:'#fff',weight:2,fillColor:'#e59b15',fillOpacity:.95}).addTo(map);
      marker.bindPopup('⛽ '+st.name+'<br>Uwaga: dojazd i zjazd niezweryfikowane');fuelMarkers.push(marker);
    }
-   const note=document.createElement('small');note.textContent='Orientacyjnie • zjazdy niezweryfikowane';$('fuelitems').append(note);
- }catch(e){if(request===fuelRequest)$('fuelitems').textContent='Serwery OSM nie odpowiedziały. Spróbuj „Odśwież”.';}
- finally{clearTimeout(timer)}
+   const note=document.createElement('small');note.textContent='Orientacyjnie • zjazdy niezweryfikowane • '+fuelLog[ fuelLog.length-1 ];$('fuelitems').append(note);
+ }catch(e){fuelInfo('Nie udało się pobrać stacji: '+e.message+'. '+fuelLog.join(' | ')+' • Spróbuj „Odśwież”.');}
 }
 $('fuelrefresh').onclick=()=>{fuelMarkers.forEach(m=>map.removeLayer(m));fuelMarkers=[];loadFuel()};
 const point=s=>{let m=s.trim().match(/^(-?\d+(?:\.\d+)?)\s*[,;]\s*(-?\d+(?:\.\d+)?)$/);if(!m)return null;let a=+m[1],b=+m[2];return Math.abs(a)<=90&&Math.abs(b)<=180?[a,b]:null};
