@@ -174,7 +174,7 @@ body.driving #fuelitems:not(:has(.compactFuel)){background:#102236d9;border-radi
 #favstatus{font-size:12px;color:#c6e5e8;min-height:1em}
 </style></head><body><div id="map"></div><button id="themebtn" type="button" aria-label="Zmień motyw mapy">☾ NOC</button><button id="recenter" type="button" title="Wyśrodkuj na GPS i włącz śledzenie" aria-label="Wróć do mojej pozycji GPS">◎</button>
 <div class="panel">
-<h1>🚗 NaviPetrus <small>PROTOTYP 0.27 • TEST</small></h1>
+<h1>🚗 NaviPetrus <small>PROTOTYP 0.27.1 • TEST</small></h1>
 <div class="fields">
 <input id="start" placeholder="Start: adres lub współrzędne" value="Poznań, Polska">
 <button class="secondary" id="gps" title="Ustaw start z GPS">📍 GPS</button>
@@ -183,7 +183,7 @@ body.driving #fuelitems:not(:has(.compactFuel)){background:#102236d9;border-radi
 </div>
 
 <div class="actions"><button id="route">Wyznacz trasę</button><button id="drive" style="display:none">▶ START</button><button class="secondary" id="clear">Wyczyść</button><button class="dark" id="toggle">Pomoc</button><button id="diagbtn" type="button">Diagnostyka</button></div>
-<div id="help">Przycisk Diagnostyka pokazuje aktualność GPS, dokładność, kierunek, prędkość i odchylenie od trasy. Przycisk DZIEŃ/NOC zmienia ręcznie jasność i kolory kafelków mapy (motyw jest zapamiętywany w przeglądarce). Wpisz nazwy miejsc lub adresy: pozostają widoczne po wyznaczeniu trasy. Przycisk ★ Ulubione otwiera listę zapisanych celów z opcjami Nawiguj, Usuń i Dodaj obecny cel. Nowe miejsca przechowują nazwę i współrzędne w pamięci tej przeglądarki; starsze wpisy wymagają ponownego potwierdzenia lokalizacji. Po uruchomieniu GPS pole startu pokazuje „Moja pozycja GPS”, a aktualne współrzędne pozostają wewnętrznymi danymi nawigacji. Możesz też podać współrzędne „szerokość, długość”. Możesz też przytrzymać mapę, aby ustawić cel. GPS wymaga zgody i HTTPS. Po naciśnięciu GPS rozpoczyna się śledzenie pozycji i prędkości. W trybie START prędkość i znak są u góry, a na dole godzina przyjazdu, czas i dystans. Podczas ruchu (od około 9 km/h) mapa próbuje obracać się według kierunku GPS. Jeśli telefon nie udostępnia kierunku, mapa pozostaje północą do góry. To eksperymentalny obrót widoku, bez pełnego map-matchingu. Pasek manewru pokazuje orientacyjną odległość i kierunek kolejnego skrętu oraz podgląd następnego manewru („POTEM”), gdy dane są dostępne na podstawie danych trasowania; nie zastępuje znaków drogowych. Bez aktualnego GPS manewr nie jest śledzony. Po wybraniu „Wyznacz trasę” wybierz „Płatne” lub „Omijaj płatne”. Jeśli serwer zwróci więcej wariantów, pojawią się przyciski wyboru trasy i jasne linie alternatywne. Nie zawsze dostępne są dwie lub trzy trasy. Po obliczeniu trasy użyj START, aby schować panel i śledzić pozycję na mapie. Znak przy przycisku Menu pokazuje tylko dostępne, orientacyjne dane OpenStreetMap; znak drogowy ma pierwszeństwo. Przycisk Menu ponownie otwiera panel. Gdy pomiar prędkości jest niedostępny, widoczne są kreski. iOS może wstrzymać GPS po wygaszeniu ekranu lub przejściu do innej aplikacji. Po wyznaczeniu trasy i uruchomieniu GPS dolny panel pokazuje szacunkowe pozostałe kilometry, czas i godzinę przyjazdu. Wartości są obliczane z postępu na zaplanowanej trasie, bez korków. W wersji 0.25 po trzech wiarygodnych pomiarach GPS poza trasą nawigacja próbuje automatycznie przeliczyć dojazd z zachowaniem celu i wybranego trybu opłat. Ponowne próby są ograniczone do jednej na 45 sekund; brak internetu może uniemożliwić przeliczenie. Po zmianie startu przelicz trasę. Stacje paliw są testowo wyszukiwane przez Nominatim (OpenStreetMap); wyniki mogą być niekompletne. W wersji 0.21.10 Blisko szuka do 5 km od GPS, a Szukaj dalej sprawdza odcinki trasy przez kilka serwerów Overpass. Przy całkowitej awarii używa ograniczonego wyszukiwania awaryjnego Nominatim w okolicy celu; nie jest to pełna lista stacji na trasie. W razie błędu wyniki mogą być niepełne. Oba tryby filtrują stacje do 500 m od trasy; dostępność zjazdu, kierunek dojazdu, rzeczywista długość objazdu i otwarcie stacji NIE są jeszcze sprawdzane. Nie wybieraj zjazdu bez sprawdzenia znaków i bezpiecznej trasy. To wersja do testów, nie do prowadzenia podczas jazdy. Tryb „Płatne” używa OSRM i nie filtruje dróg płatnych. Tryb „Omijaj płatne” próbuje wyznaczyć trasę przez usługę Valhalla z opcją exclude_tolls; nie gwarantuje uniknięcia każdej opłaty ani uwzględnienia aktualnych przepisów. Jeżeli usługa jest niedostępna, aplikacja zgłosi błąd zamiast po cichu wyznaczać trasę płatną. Zawsze sprawdź znaki i opłaty. Trasy nie uwzględniają korków.</div>
+<div id="help">Przycisk Diagnostyka pokazuje aktualność GPS, dokładność, kierunek, prędkość i odchylenie od trasy. Przycisk DZIEŃ/NOC zmienia ręcznie jasność i kolory kafelków mapy (motyw jest zapamiętywany w przeglądarce). Wpisz nazwy miejsc lub adresy: pozostają widoczne po wyznaczeniu trasy. Przycisk ★ Ulubione otwiera listę zapisanych celów z opcjami Nawiguj, Usuń i Dodaj obecny cel. W 0.27.1 dodawanie ulubionego wymaga osobnego podania wyszukiwanego miejsca i etykiety oraz potwierdzenia wyniku; starsze wpisy wymagają ponownego potwierdzenia lokalizacji. Po uruchomieniu GPS pole startu pokazuje „Moja pozycja GPS”, a aktualne współrzędne pozostają wewnętrznymi danymi nawigacji. Możesz też podać współrzędne „szerokość, długość”. Możesz też przytrzymać mapę, aby ustawić cel. GPS wymaga zgody i HTTPS. Po naciśnięciu GPS rozpoczyna się śledzenie pozycji i prędkości. W trybie START prędkość i znak są u góry, a na dole godzina przyjazdu, czas i dystans. Podczas ruchu (od około 9 km/h) mapa próbuje obracać się według kierunku GPS. Jeśli telefon nie udostępnia kierunku, mapa pozostaje północą do góry. To eksperymentalny obrót widoku, bez pełnego map-matchingu. Pasek manewru pokazuje orientacyjną odległość i kierunek kolejnego skrętu oraz podgląd następnego manewru („POTEM”), gdy dane są dostępne na podstawie danych trasowania; nie zastępuje znaków drogowych. Bez aktualnego GPS manewr nie jest śledzony. Po wybraniu „Wyznacz trasę” wybierz „Płatne” lub „Omijaj płatne”. Jeśli serwer zwróci więcej wariantów, pojawią się przyciski wyboru trasy i jasne linie alternatywne. Nie zawsze dostępne są dwie lub trzy trasy. Po obliczeniu trasy użyj START, aby schować panel i śledzić pozycję na mapie. Znak przy przycisku Menu pokazuje tylko dostępne, orientacyjne dane OpenStreetMap; znak drogowy ma pierwszeństwo. Przycisk Menu ponownie otwiera panel. Gdy pomiar prędkości jest niedostępny, widoczne są kreski. iOS może wstrzymać GPS po wygaszeniu ekranu lub przejściu do innej aplikacji. Po wyznaczeniu trasy i uruchomieniu GPS dolny panel pokazuje szacunkowe pozostałe kilometry, czas i godzinę przyjazdu. Wartości są obliczane z postępu na zaplanowanej trasie, bez korków. W wersji 0.25 po trzech wiarygodnych pomiarach GPS poza trasą nawigacja próbuje automatycznie przeliczyć dojazd z zachowaniem celu i wybranego trybu opłat. Ponowne próby są ograniczone do jednej na 45 sekund; brak internetu może uniemożliwić przeliczenie. Po zmianie startu przelicz trasę. Stacje paliw są testowo wyszukiwane przez Nominatim (OpenStreetMap); wyniki mogą być niekompletne. W wersji 0.21.10 Blisko szuka do 5 km od GPS, a Szukaj dalej sprawdza odcinki trasy przez kilka serwerów Overpass. Przy całkowitej awarii używa ograniczonego wyszukiwania awaryjnego Nominatim w okolicy celu; nie jest to pełna lista stacji na trasie. W razie błędu wyniki mogą być niepełne. Oba tryby filtrują stacje do 500 m od trasy; dostępność zjazdu, kierunek dojazdu, rzeczywista długość objazdu i otwarcie stacji NIE są jeszcze sprawdzane. Nie wybieraj zjazdu bez sprawdzenia znaków i bezpiecznej trasy. To wersja do testów, nie do prowadzenia podczas jazdy. Tryb „Płatne” używa OSRM i nie filtruje dróg płatnych. Tryb „Omijaj płatne” próbuje wyznaczyć trasę przez usługę Valhalla z opcją exclude_tolls; nie gwarantuje uniknięcia każdej opłaty ani uwzględnienia aktualnych przepisów. Jeżeli usługa jest niedostępna, aplikacja zgłosi błąd zamiast po cichu wyznaczać trasę płatną. Zawsze sprawdź znaki i opłaty. Trasy nie uwzględniają korków.</div>
 </div>
 <button id="showpanel" class="secondary" aria-label="Otwórz panel" style="display:none">☰ Menu</button><div id="toplimit" aria-label="Orientacyjne ograniczenie prędkości OSM"><span id="limitSign" class="unknown">?</span><div id="topspeed"><strong id="topspeedvalue">—</strong><small>km/h</small></div></div>
 <div id="nextturn" aria-live="off"><span id="turnarrow">↑</span><div id="turndetails"><div id="turndistance">—</div><div id="turnstreet">Oczekiwanie na trasę</div></div><div id="afterturn"><span id="afterarrow">↑</span><div id="afterdetails"><div id="afterlabel">POTEM</div><div id="afterdistance">—</div><div id="afterstreet">—</div></div></div></div>
@@ -506,7 +506,7 @@ async function loadFuel(far=false){
    marker.bindPopup('⛽ '+st.name.replaceAll('&','&amp;').replaceAll('<','&lt;')+'<br>Za ok. '+(st.ahead/1000).toFixed(1)+' km wzdłuż trasy<br>Dojazd i zjazd niezweryfikowane');fuelMarkers.push(marker);
   }
   if(driving){renderCompactFuel();return;}
-  const note=document.createElement('small');note.textContent='TEST 0.27 • '+source+' • '+stations.length+' stacji do 500 m od trasy • '+(partial?'część odcinków nie została sprawdzona':'lista może być niepełna')+' • dojazd niezweryfikowany';$('fuelitems').append(note);
+  const note=document.createElement('small');note.textContent='TEST 0.27.1 • '+source+' • '+stations.length+' stacji do 500 m od trasy • '+(partial?'część odcinków nie została sprawdzona':'lista może być niepełna')+' • dojazd niezweryfikowany';$('fuelitems').append(note);
  }catch(e){fuelInfo('Nie udało się pobrać stacji: '+(e.name==='AbortError'?'przekroczono czas':e.message||'błąd')+'. Spróbuj później.');}
 }
 // 0.26: w czasie jazdy tylko trzy najbliższe, jeszcze nieminięte stacje.
@@ -886,14 +886,14 @@ function renderFavorites(){
  a.forEach((x,i)=>{
   const row=document.createElement('div');row.className='favrow';
   const name=document.createElement('div');name.className='favname';name.textContent=x.name;
-  const addr=document.createElement('div');addr.className='favaddress';addr.textContent=x.address+(Array.isArray(x.coords)?'':' · starszy zapis — lokalizacja wymaga ponownego sprawdzenia');
+  const addr=document.createElement('div');addr.className='favaddress';addr.textContent=x.address+(Array.isArray(x.coords)?' · sprawdź, czy to właściwy punkt':' · starszy zapis — lokalizacja wymaga ponownego sprawdzenia');
   const buttons=document.createElement('div');buttons.className='favbuttons';
   const go=document.createElement('button');go.textContent='Nawiguj';go.onclick=async()=>{
    go.disabled=true;favMessage('Sprawdzam położenie celu…');
    try{
     // Stare ulubione nie mają zapisanych współrzędnych — rozpoznaj adres ponownie.
     const coords=Array.isArray(x.coords)&&x.coords.length===2?x.coords:await geocode(x.address);
-    if(!Array.isArray(x.coords)){if(!confirm('Starszy zapis „'+x.name+'” nie ma potwierdzonej lokalizacji. Znaleziono '+coords.map(v=>v.toFixed(5)).join(', ')+'. Czy chcesz wyznaczyć trasę do tego punktu?'))return;}
+    if(!confirm('Czy to właściwy cel?\n\n'+x.name+'\n'+x.address+'\n'+coords.map(v=>v.toFixed(5)).join(', ')+'\n\nW razie pomyłki wybierz Anuluj, usuń wpis i dodaj go ponownie.'))return;
     pinnedDestination={label:x.name,coords:[...coords]};$('end').value=x.name;
     closeFavorites();$('routeDialog').style.display='flex';status('Cel: '+x.name+'. Wybierz tryb trasy.');
    }catch(e){favMessage('Nie można odczytać celu: '+e.message)}finally{go.disabled=false}
@@ -908,15 +908,36 @@ function renderFavorites(){
 $('save').onclick=openFavorites;
 $('favclose').onclick=closeFavorites;
 $('favoritesDialog').addEventListener('click',e=>{if(e.target===$('favoritesDialog'))closeFavorites()});
+// 0.27.1: nazwa etykiety NIE jest adresem. Użytkownik podaje oba pola oddzielnie.
+async function resolveFavoriteLocation(query){
+ const p=point(query);if(p)return {coords:p,display:'Współrzędne: '+p.join(', ')};
+ const u='https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=5&q='+encodeURIComponent(query);
+ const r=await fetch(u,{headers:{'Accept-Language':'pl'}});
+ if(!r.ok)throw Error('Serwer wyszukiwania nie odpowiada (HTTP '+r.status+')');
+ const items=await r.json();if(!items.length)throw Error('Nie znaleziono miejsca „'+query+'”. Podaj miasto, ulicę lub dokładniejszą nazwę.');
+ let idx=0;
+ if(items.length>1){
+  const choices=items.map((x,i)=>(i+1)+'. '+x.display_name).join('\n');
+  const answer=prompt('Wybierz WŁAŚCIWĄ lokalizację (1–'+items.length+'):\n'+choices+'\n\nAnuluj = nie zapisuj','1');
+  if(answer===null) return null;
+  const n=Number(answer);if(!Number.isInteger(n)||n<1||n>items.length)throw Error('Nie wybrano poprawnego numeru miejsca.');idx=n-1;
+ }
+ const x=items[idx];return {coords:[Number(x.lat),Number(x.lon)],display:x.display_name};
+}
 $('favadd').onclick=async()=>{
- const address=$('end').value.trim();if(!address)return favMessage('Najpierw wpisz cel w głównym polu.');
- const name=prompt('Nazwa ulubionego miejsca:',address);if(!name||!name.trim())return;
- const button=$('favadd');button.disabled=true;favMessage('Sprawdzam adres przed zapisaniem…');
+ const current=$('end').value.trim();
+ const query=prompt('Jakiego miejsca szukasz? Podaj miasto i stację lub adres (np. Konin PKP, Konin).\nNie wpisuj tutaj tylko nazwy etykiety.',current);
+ if(query===null||!query.trim())return;
+ const address=query.trim();
+ const name=prompt('Pod jaką nazwą zapisać w Ulubionych?',address);
+ if(name===null||!name.trim())return;
+ const button=$('favadd');button.disabled=true;favMessage('Wyszukuję nowe miejsce: '+address+'…');
  try{
-  const coords=pinnedDestination?.label===address?pinnedDestination.coords:await geocode(address);
-  if(!confirm('Zapisać „'+name.trim()+'” pod lokalizacją '+coords.map(v=>v.toFixed(5)).join(', ')+'?\nUpewnij się, że wybrany punkt jest właściwy.'))return;
-  const a=readFavorites();a.push({name:name.trim(),address,coords});writeFavorites(a);renderFavorites();favMessage('Zapisano w tej przeglądarce.');
- }catch(e){favMessage('Nie udało się zapisać: '+e.message)}finally{button.disabled=false}
+  // Zawsze wyszukaj NOWY adres. Nigdy nie używaj współrzędnych starego celu.
+  const found=await resolveFavoriteLocation(address);if(!found)return favMessage('Anulowano wybór miejsca.');
+  if(!confirm('SPRAWDŹ PRZED ZAPISEM\n\nNazwa: '+name.trim()+'\nWyszukane miejsce: '+found.display+'\n\nCzy to jest właściwa lokalizacja?'))return favMessage('Anulowano. Nic nie zapisano.');
+  const a=readFavorites();a.push({name:name.trim(),address:found.display,coords:found.coords});writeFavorites(a);renderFavorites();favMessage('Zapisano potwierdzone miejsce.');
+ }catch(e){favMessage('Nie zapisano: '+e.message)}finally{button.disabled=false}
 };
 map.on('contextmenu',e=>{$('end').value=e.latlng.lat.toFixed(6)+', '+e.latlng.lng.toFixed(6);status('Cel ustawiony z mapy.')});
 saved();
