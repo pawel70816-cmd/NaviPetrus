@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#102236"><title>NaviPetrus 0.5</title>
+<meta name="theme-color" content="#102236"><title>NaviPetrus 0.6</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#102236;color:#fff}
@@ -11,7 +11,7 @@ h1{font-size:19px;margin:0 0 8px;display:flex;justify-content:space-between;alig
 input{width:100%;min-width:0;padding:10px;border-radius:9px;border:1px solid #60788d;background:#fff;color:#111;font-size:15px}
 button{border:0;border-radius:10px;padding:10px 12px;font-weight:700;font-size:13px;background:#29c2aa;color:#06211e;cursor:pointer}
 button.secondary{background:#dbe6f0;color:#142c3f}button.dark{background:#38516b;color:white}
-.actions{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}.actions button{flex:1}
+.routeopts{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:12px}.routeopts select{flex:1;min-width:0;padding:9px 6px;border:1px solid #60788d;border-radius:9px;background:#dbe6f0;color:#142c3f;font-size:13px;font-weight:700}.actions{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}.actions button{flex:1}
 .bottom{position:absolute;z-index:500;bottom:calc(12px + env(safe-area-inset-bottom,0px));left:10px;right:10px;background:#102236f5;border-radius:16px;padding:12px}
 #result{font-size:15px;font-weight:700}#status{font-size:12px;color:#d5e6f2;margin-top:6px}
 #saved{font-size:12px;max-height:105px;overflow:auto;margin-top:6px}#saved button{padding:6px;margin:3px;background:#38516b;color:#fff}
@@ -20,15 +20,16 @@ button.secondary{background:#dbe6f0;color:#142c3f}button.dark{background:#38516b
 @media(max-height:650px){.panel{padding:8px}.bottom{padding:8px}}
 </style></head><body><div id="map"></div>
 <div class="panel">
-<h1>🚗 NaviPetrus <small>PROTOTYP 0.5 • TEST</small></h1>
+<h1>🚗 NaviPetrus <small>PROTOTYP 0.6 • TEST</small></h1>
 <div class="fields">
 <input id="start" placeholder="Start: adres lub współrzędne" value="Poznań, Polska">
 <button class="secondary" id="gps" title="Ustaw start z GPS">📍 GPS</button>
 <input id="end" placeholder="Cel: adres lub współrzędne" value="52.31972, 14.55193">
 <button class="secondary" id="save" title="Zapisz cel">★ Zapisz</button>
 </div>
+<div class="routeopts"><label for="routeMode">Rodzaj trasy:</label><select id="routeMode"><option value="normal">Płatne dozwolone</option><option value="noTolls">Omijaj płatne drogi (test)</option></select></div>
 <div class="actions"><button id="route">Wyznacz trasę</button><button class="secondary" id="clear">Wyczyść</button><button class="dark" id="toggle">Pomoc</button></div>
-<div id="help">Wpisz adresy lub współrzędne „szerokość, długość”. Możesz też przytrzymać mapę, aby ustawić cel. GPS wymaga zgody i HTTPS. Po naciśnięciu GPS rozpoczyna się śledzenie pozycji i prędkości. Gdy pomiar prędkości jest niedostępny, widoczne są kreski. iOS może wstrzymać GPS po wygaszeniu ekranu lub przejściu do innej aplikacji. Po wyznaczeniu trasy i uruchomieniu GPS dolny panel pokazuje szacunkowe pozostałe kilometry, czas i godzinę przyjazdu. Wartości są obliczane z postępu na zaplanowanej trasie, bez korków. Przy zjechaniu z trasy trzeba ją przeliczyć. Po zmianie startu przelicz trasę. Stacje paliw są pobierane z OpenStreetMap. Pokazujemy maksymalnie trzy punkty do 3 km w linii prostej od trasy; dostępność zjazdu, kierunek dojazdu, rzeczywista długość objazdu i otwarcie stacji NIE są jeszcze sprawdzane. Nie wybieraj zjazdu bez sprawdzenia znaków i bezpiecznej trasy. To wersja do testów, nie do prowadzenia podczas jazdy. Trasy nie uwzględniają korków ani opłat.</div>
+<div id="help">Wpisz adresy lub współrzędne „szerokość, długość”. Możesz też przytrzymać mapę, aby ustawić cel. GPS wymaga zgody i HTTPS. Po naciśnięciu GPS rozpoczyna się śledzenie pozycji i prędkości. Gdy pomiar prędkości jest niedostępny, widoczne są kreski. iOS może wstrzymać GPS po wygaszeniu ekranu lub przejściu do innej aplikacji. Po wyznaczeniu trasy i uruchomieniu GPS dolny panel pokazuje szacunkowe pozostałe kilometry, czas i godzinę przyjazdu. Wartości są obliczane z postępu na zaplanowanej trasie, bez korków. Przy zjechaniu z trasy trzeba ją przeliczyć. Po zmianie startu przelicz trasę. Stacje paliw są pobierane z OpenStreetMap. Pokazujemy maksymalnie trzy punkty do 3 km w linii prostej od trasy; dostępność zjazdu, kierunek dojazdu, rzeczywista długość objazdu i otwarcie stacji NIE są jeszcze sprawdzane. Nie wybieraj zjazdu bez sprawdzenia znaków i bezpiecznej trasy. To wersja do testów, nie do prowadzenia podczas jazdy. Tryb „Płatne dozwolone” używa OSRM i nie filtruje dróg płatnych. Tryb „Omijaj płatne drogi” próbuje wyznaczyć trasę przez usługę Valhalla z opcją exclude_tolls; nie gwarantuje uniknięcia każdej opłaty ani uwzględnienia aktualnych przepisów. Jeżeli usługa jest niedostępna, aplikacja zgłosi błąd zamiast po cichu wyznaczać trasę płatną. Zawsze sprawdź znaki i opłaty. Trasy nie uwzględniają korków.</div>
 </div>
 <div id="fuelbox"><strong>⛽ Stacje po drodze</strong><div id="fuelitems">Szukam stacji…</div><button class="secondary" id="fuelrefresh">Odśwież</button></div>
 <div class="bottom"><div id="speedbar"><div><span id="speedvalue">—</span> <span id="speedunit">km/h</span></div><div id="gpsstate">GPS nieuruchomiony</div></div><div id="tripbar"><div class="tripitem"><small>DO CELU</small><b id="remainkm">—</b></div><div class="tripitem"><small>POZOSTAŁO</small><b id="remaintime">—</b></div><div class="tripitem"><small>PRZYJAZD</small><b id="arrival">—</b></div></div><div id="result">Gotowe do wyznaczenia trasy</div><div id="status">Mapa i trasy wymagają internetu.</div><div id="saved"></div></div>
@@ -156,13 +157,44 @@ const point=s=>{let m=s.trim().match(/^(-?\d+(?:\.\d+)?)\s*[,;]\s*(-?\d+(?:\.\d+
 async function geocode(s){let p=point(s);if(p)return p;
 const u='https://nominatim.openstreetmap.org/search?format=json&limit=1&q='+encodeURIComponent(s);
 const r=await fetch(u,{headers:{'Accept-Language':'pl'}});if(!r.ok)throw Error('Wyszukiwanie adresu niedostępne');const j=await r.json();if(!j.length)throw Error('Nie znaleziono adresu: '+s);return [+j[0].lat,+j[0].lon]}
-$('route').onclick=async()=>{const request=++routeRequest;clearTrip();try{
+// Valhalla używa zakodowanej polyline6. Konwersja do GeoJSON dla Leaflet.
+function decodePolyline6(str){
+ const coords=[];let i=0,lat=0,lon=0;
+ while(i<str.length){
+  const vals=[];
+  for(let j=0;j<2;j++){
+   let result=0,shift=0,b;
+   do{if(i>=str.length)throw Error('Uszkodzona geometria trasy');b=str.charCodeAt(i++)-63;result|=(b&31)<<shift;shift+=5;}while(b>=32);
+   vals.push((result&1)?~(result>>1):(result>>1));
+  }
+  lat+=vals[0];lon+=vals[1];coords.push([lon/1e6,lat/1e6]);
+ }
+ return coords;
+}
+async function getRoute(a,b,mode){
+ if(mode==='noTolls'){
+  const request={locations:[{lat:a[0],lon:a[1]},{lat:b[0],lon:b[1]}],costing:'auto',costing_options:{auto:{exclude_tolls:true}},units:'kilometers'};
+  const u='https://valhalla1.openstreetmap.de/route?json='+encodeURIComponent(JSON.stringify(request));
+  let r;try{r=await fetch(u,{headers:{'Accept':'application/json'}})}catch(e){throw Error('Serwer tras bezpłatnych jest niedostępny. Spróbuj później.')}
+  if(!r.ok)throw Error('Nie udało się obliczyć trasy bez opłat (HTTP '+r.status+').');
+  const j=await r.json();
+  if(!j.trip?.legs?.length)throw Error('Nie znaleziono trasy z pomijaniem opłat.');
+  let coordinates=[];
+  for(const leg of j.trip.legs){const pts=decodePolyline6(leg.shape);if(coordinates.length)pts.shift();coordinates.push(...pts)}
+  if(coordinates.length<2)throw Error('Brak geometrii trasy.');
+  return {distance:j.trip.summary.length*1000,duration:j.trip.summary.time,geometry:{type:'LineString',coordinates}};
+ }
+ const u=`https://router.project-osrm.org/route/v1/driving/${a[1]},${a[0]};${b[1]},${b[0]}?overview=full&geometries=geojson&steps=false`;
+ const r=await fetch(u);if(!r.ok)throw Error('Serwer tras niedostępny');
+ const j=await r.json();if(!j.routes?.length)throw Error('Nie znaleziono trasy');
+ return j.routes[0];
+}
+$('route').onclick=async()=>{const request=++routeRequest;const mode=$('routeMode').value;clearTrip();try{
 $('route').disabled=true;status('Szukam adresów…');
 let a=await geocode($('start').value);let b=await geocode($('end').value);
 status('Obliczam trasę…');
-const u=`https://router.project-osrm.org/route/v1/driving/${a[1]},${a[0]};${b[1]},${b[0]}?overview=full&geometries=geojson&steps=false`;
-let r=await fetch(u);if(request!==routeRequest)return;if(!r.ok)throw Error('Serwer tras niedostępny');let j=await r.json();if(request!==routeRequest)return;if(!j.routes?.length)throw Error('Nie znaleziono trasy');
-clean();clearTrip();let t=j.routes[0];line=L.geoJSON(t.geometry,{style:{color:'#176bf1',weight:6,opacity:.9}}).addTo(map);
+let t=await getRoute(a,b,mode);if(request!==routeRequest)return;
+clean();clearTrip();line=L.geoJSON(t.geometry,{style:{color:'#176bf1',weight:6,opacity:.9}}).addTo(map);
 markers=[L.marker(a).addTo(map).bindPopup('Start'),L.marker(b).addTo(map).bindPopup('Cel')];
 map.fitBounds(line.getBounds(),{padding:[35,35]});
 const pts=t.geometry.coordinates.map(p=>[p[1],p[0]]);
@@ -171,7 +203,7 @@ activeTrip={points:pts,segments,geometryLength:segments.reduce((a,b)=>a+b,0),dis
 $('tripbar').classList.add('active');updateTrip();loadFuel();
 let km=(t.distance/1000).toFixed(1),min=Math.round(t.duration/60);
 $('result').textContent=`${km} km • ${Math.floor(min/60)} h ${min%60} min`;
-status('Szacunkowy czas bez aktualnych korków. Trasa może zawierać płatne odcinki.');
+status(mode==='noTolls'?'Trasa z próbą ominięcia opłat (Valhalla). Brak gwarancji bezpłatności. Bez korków.':'Szacunkowy czas bez aktualnych korków. Trasa może zawierać płatne odcinki.');
 }catch(e){if(request===routeRequest)status('Błąd: '+e.message)}finally{if(request===routeRequest)$('route').disabled=false}};
 // watchPosition działa tylko podczas dostępności lokalizacji dla strony.
 function updateGps(p){
@@ -224,6 +256,7 @@ setInterval(()=>{
  }
 },3000);
 $('clear').onclick=()=>{routeRequest++;clean();clearTrip();$('route').disabled=false;$('result').textContent='Gotowe do wyznaczenia trasy';status('Trasa wyczyszczona. Znacznik GPS pozostaje na mapie.')};
+$('routeMode').onchange=()=>{status('Zmieniono rodzaj trasy. Naciśnij „Wyznacz trasę”, aby przeliczyć.');};
 $('toggle').onclick=()=>$('help').style.display=$('help').style.display==='block'?'none':'block';
 function saved(){let a=JSON.parse(localStorage.getItem('navipetrus_places')||'[]');$('saved').replaceChildren();if(a.length){let t=document.createElement('span');t.textContent='Zapisane cele: ';$('saved').append(t)}a.forEach((x,i)=>{let b=document.createElement('button');b.textContent=x.name;b.onclick=()=>{$('end').value=x.address;status('Wybrano zapisany cel.')};$('saved').append(b)})}
 $('save').onclick=()=>{let address=$('end').value.trim();if(!address)return status('Najpierw wpisz cel.');let name=prompt('Nazwa zapisanego miejsca:',address);if(!name)return;let a=JSON.parse(localStorage.getItem('navipetrus_places')||'[]');a.push({name,address});localStorage.setItem('navipetrus_places',JSON.stringify(a.slice(-15)));saved();status('Cel zapisany w tej przeglądarce.')};
