@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#102236"><title>NaviPetrus 0.18</title>
+<meta name="theme-color" content="#102236"><title>NaviPetrus 0.19</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#102236;color:#fff}
@@ -105,9 +105,15 @@ body.driving #fuelbox{top:calc(env(safe-area-inset-top,0px) + 165px)}
 #recenter{display:none;position:absolute;z-index:530;right:10px;bottom:calc(115px + env(safe-area-inset-bottom,0px));width:48px;height:48px;border-radius:50%;padding:0;background:#eaf3fa;color:#17364e;font-size:25px;box-shadow:0 3px 12px #0008;touch-action:manipulation}
 body.driving #recenter{display:block}
 #recenter.manual{background:#29c2aa;color:#06211e}
-</style></head><body><div id="map"></div><button id="recenter" type="button" title="Wyśrodkuj na GPS i włącz śledzenie" aria-label="Wróć do mojej pozycji GPS">◎</button>
+/* 0.19: ręczny motyw mapy DZIEŃ/NOC, bez dodatkowych serwerów */
+body.night #map .leaflet-tile-pane{filter:brightness(.68) invert(1) hue-rotate(180deg) saturate(.65) contrast(.9)}
+body.night #map{background:#182631}
+#themebtn{position:absolute;z-index:531;right:10px;top:calc(env(safe-area-inset-top,0px) + 10px);background:#eaf3fa;color:#17364e;box-shadow:0 3px 12px #0008;padding:9px 11px;border-radius:12px;font-size:13px}
+body.night #themebtn{background:#273e57;color:#fff}
+body:not(.driving) #themebtn{top:calc(env(safe-area-inset-top,0px) + 225px)}
+</style></head><body><div id="map"></div><button id="themebtn" type="button" aria-label="Zmień motyw mapy">☾ NOC</button><button id="recenter" type="button" title="Wyśrodkuj na GPS i włącz śledzenie" aria-label="Wróć do mojej pozycji GPS">◎</button>
 <div class="panel">
-<h1>🚗 NaviPetrus <small>PROTOTYP 0.18 • TEST</small></h1>
+<h1>🚗 NaviPetrus <small>PROTOTYP 0.19 • TEST</small></h1>
 <div class="fields">
 <input id="start" placeholder="Start: adres lub współrzędne" value="Poznań, Polska">
 <button class="secondary" id="gps" title="Ustaw start z GPS">📍 GPS</button>
@@ -116,7 +122,7 @@ body.driving #recenter{display:block}
 </div>
 
 <div class="actions"><button id="route">Wyznacz trasę</button><button id="drive" style="display:none">▶ START</button><button class="secondary" id="clear">Wyczyść</button><button class="dark" id="toggle">Pomoc</button></div>
-<div id="help">Wpisz adresy lub współrzędne „szerokość, długość”. Możesz też przytrzymać mapę, aby ustawić cel. GPS wymaga zgody i HTTPS. Po naciśnięciu GPS rozpoczyna się śledzenie pozycji i prędkości. W trybie START prędkość i znak są u góry, a na dole godzina przyjazdu, czas i dystans. Podczas ruchu (od około 9 km/h) mapa próbuje obracać się według kierunku GPS. Jeśli telefon nie udostępnia kierunku, mapa pozostaje północą do góry. To eksperymentalny obrót widoku, bez pełnego map-matchingu. Pasek manewru pokazuje orientacyjną odległość i kierunek kolejnego skrętu oraz podgląd następnego manewru („POTEM”), gdy dane są dostępne na podstawie danych trasowania; nie zastępuje znaków drogowych. Bez aktualnego GPS manewr nie jest śledzony. Po wybraniu „Wyznacz trasę” wybierz „Płatne” lub „Omijaj płatne”. Po obliczeniu trasy użyj START, aby schować panel i śledzić pozycję na mapie. Znak przy przycisku Menu pokazuje tylko dostępne, orientacyjne dane OpenStreetMap; znak drogowy ma pierwszeństwo. Przycisk Menu ponownie otwiera panel. Gdy pomiar prędkości jest niedostępny, widoczne są kreski. iOS może wstrzymać GPS po wygaszeniu ekranu lub przejściu do innej aplikacji. Po wyznaczeniu trasy i uruchomieniu GPS dolny panel pokazuje szacunkowe pozostałe kilometry, czas i godzinę przyjazdu. Wartości są obliczane z postępu na zaplanowanej trasie, bez korków. Przy zjechaniu z trasy trzeba ją przeliczyć. Po zmianie startu przelicz trasę. Stacje paliw są pobierane z OpenStreetMap. Szukamy w najbliższych około 30 km trasy, pokazując maksymalnie trzy punkty do 3 km w linii prostej od trasy; dostępność zjazdu, kierunek dojazdu, rzeczywista długość objazdu i otwarcie stacji NIE są jeszcze sprawdzane. Nie wybieraj zjazdu bez sprawdzenia znaków i bezpiecznej trasy. To wersja do testów, nie do prowadzenia podczas jazdy. Tryb „Płatne” używa OSRM i nie filtruje dróg płatnych. Tryb „Omijaj płatne” próbuje wyznaczyć trasę przez usługę Valhalla z opcją exclude_tolls; nie gwarantuje uniknięcia każdej opłaty ani uwzględnienia aktualnych przepisów. Jeżeli usługa jest niedostępna, aplikacja zgłosi błąd zamiast po cichu wyznaczać trasę płatną. Zawsze sprawdź znaki i opłaty. Trasy nie uwzględniają korków.</div>
+<div id="help">Przycisk DZIEŃ/NOC zmienia ręcznie jasność i kolory kafelków mapy (motyw jest zapamiętywany w przeglądarce). Wpisz adresy lub współrzędne „szerokość, długość”. Możesz też przytrzymać mapę, aby ustawić cel. GPS wymaga zgody i HTTPS. Po naciśnięciu GPS rozpoczyna się śledzenie pozycji i prędkości. W trybie START prędkość i znak są u góry, a na dole godzina przyjazdu, czas i dystans. Podczas ruchu (od około 9 km/h) mapa próbuje obracać się według kierunku GPS. Jeśli telefon nie udostępnia kierunku, mapa pozostaje północą do góry. To eksperymentalny obrót widoku, bez pełnego map-matchingu. Pasek manewru pokazuje orientacyjną odległość i kierunek kolejnego skrętu oraz podgląd następnego manewru („POTEM”), gdy dane są dostępne na podstawie danych trasowania; nie zastępuje znaków drogowych. Bez aktualnego GPS manewr nie jest śledzony. Po wybraniu „Wyznacz trasę” wybierz „Płatne” lub „Omijaj płatne”. Po obliczeniu trasy użyj START, aby schować panel i śledzić pozycję na mapie. Znak przy przycisku Menu pokazuje tylko dostępne, orientacyjne dane OpenStreetMap; znak drogowy ma pierwszeństwo. Przycisk Menu ponownie otwiera panel. Gdy pomiar prędkości jest niedostępny, widoczne są kreski. iOS może wstrzymać GPS po wygaszeniu ekranu lub przejściu do innej aplikacji. Po wyznaczeniu trasy i uruchomieniu GPS dolny panel pokazuje szacunkowe pozostałe kilometry, czas i godzinę przyjazdu. Wartości są obliczane z postępu na zaplanowanej trasie, bez korków. Przy zjechaniu z trasy trzeba ją przeliczyć. Po zmianie startu przelicz trasę. Stacje paliw są pobierane z OpenStreetMap. Szukamy w najbliższych około 30 km trasy, pokazując maksymalnie trzy punkty do 3 km w linii prostej od trasy; dostępność zjazdu, kierunek dojazdu, rzeczywista długość objazdu i otwarcie stacji NIE są jeszcze sprawdzane. Nie wybieraj zjazdu bez sprawdzenia znaków i bezpiecznej trasy. To wersja do testów, nie do prowadzenia podczas jazdy. Tryb „Płatne” używa OSRM i nie filtruje dróg płatnych. Tryb „Omijaj płatne” próbuje wyznaczyć trasę przez usługę Valhalla z opcją exclude_tolls; nie gwarantuje uniknięcia każdej opłaty ani uwzględnienia aktualnych przepisów. Jeżeli usługa jest niedostępna, aplikacja zgłosi błąd zamiast po cichu wyznaczać trasę płatną. Zawsze sprawdź znaki i opłaty. Trasy nie uwzględniają korków.</div>
 </div>
 <button id="showpanel" class="secondary" aria-label="Otwórz panel" style="display:none">☰ Menu</button><div id="toplimit" aria-label="Orientacyjne ograniczenie prędkości OSM"><span id="limitSign" class="unknown">?</span><div id="topspeed"><strong id="topspeedvalue">—</strong><small>km/h</small></div></div>
 <div id="nextturn" aria-live="off"><span id="turnarrow">↑</span><div id="turndetails"><div id="turndistance">—</div><div id="turnstreet">Oczekiwanie na trasę</div></div><div id="afterturn"><span id="afterarrow">↑</span><div id="afterdetails"><div id="afterlabel">POTEM</div><div id="afterdistance">—</div><div id="afterstreet">—</div></div></div></div>
@@ -129,6 +135,19 @@ body.driving #recenter{display:block}
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 const $=id=>document.getElementById(id);
+let nightMode=false;
+try{nightMode=localStorage.getItem('navipetrus_night')==='1';}catch(e){}
+function applyTheme(){
+ document.body.classList.toggle('night',nightMode);
+ $('themebtn').textContent=nightMode?'☀ DZIEŃ':'☾ NOC';
+ $('themebtn').setAttribute('aria-label',nightMode?'Włącz tryb dzienny':'Włącz tryb nocny');
+}
+$('themebtn').onclick=()=>{
+ nightMode=!nightMode;
+ try{localStorage.setItem('navipetrus_night',nightMode?'1':'0');}catch(e){}
+ applyTheme();
+};
+applyTheme();
 const map=L.map('map',{zoomControl:false}).setView([52.4064,16.9252],9);
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',maxZoom:19}).addTo(map);
 $('zoomplus').onclick=()=>map.zoomIn();
