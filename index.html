@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#102236"><title>NaviPetrus 0.19</title>
+<meta name="theme-color" content="#102236"><title>NaviPetrus 0.20</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#102236;color:#fff}
@@ -111,9 +111,17 @@ body.night #map{background:#182631}
 #themebtn{position:absolute;z-index:531;right:10px;top:calc(env(safe-area-inset-top,0px) + 10px);background:#eaf3fa;color:#17364e;box-shadow:0 3px 12px #0008;padding:9px 11px;border-radius:12px;font-size:13px}
 body.night #themebtn{background:#273e57;color:#fff}
 body:not(.driving) #themebtn{top:calc(env(safe-area-inset-top,0px) + 225px)}
+/* 0.20 — diagnostyka lokalna, bez wysyłania danych */
+#diagbtn{background:#254963;color:#fff}
+#diagpanel{display:none;position:absolute;z-index:610;left:10px;right:10px;bottom:calc(95px + env(safe-area-inset-bottom,0px));max-width:420px;max-height:55vh;overflow:auto;background:#102437f5;border:1px solid #67839c;border-radius:13px;padding:12px;color:white;box-shadow:0 6px 20px #0008;font-size:12px;line-height:1.5}
+#diagpanel.open{display:block}
+#diagpanel .diaghead{display:flex;justify-content:space-between;align-items:center;gap:8px}
+#diagpanel button{font-size:12px;padding:6px 10px}
+#diagrows{margin:8px 0;white-space:pre-line;font-variant-numeric:tabular-nums}
+#diagpanel .hint{color:#c5d6e5;font-size:11px}
 </style></head><body><div id="map"></div><button id="themebtn" type="button" aria-label="Zmień motyw mapy">☾ NOC</button><button id="recenter" type="button" title="Wyśrodkuj na GPS i włącz śledzenie" aria-label="Wróć do mojej pozycji GPS">◎</button>
 <div class="panel">
-<h1>🚗 NaviPetrus <small>PROTOTYP 0.19 • TEST</small></h1>
+<h1>🚗 NaviPetrus <small>PROTOTYP 0.20 • TEST</small></h1>
 <div class="fields">
 <input id="start" placeholder="Start: adres lub współrzędne" value="Poznań, Polska">
 <button class="secondary" id="gps" title="Ustaw start z GPS">📍 GPS</button>
@@ -121,8 +129,8 @@ body:not(.driving) #themebtn{top:calc(env(safe-area-inset-top,0px) + 225px)}
 <button class="secondary" id="save" title="Zapisz cel">★ Zapisz</button>
 </div>
 
-<div class="actions"><button id="route">Wyznacz trasę</button><button id="drive" style="display:none">▶ START</button><button class="secondary" id="clear">Wyczyść</button><button class="dark" id="toggle">Pomoc</button></div>
-<div id="help">Przycisk DZIEŃ/NOC zmienia ręcznie jasność i kolory kafelków mapy (motyw jest zapamiętywany w przeglądarce). Wpisz adresy lub współrzędne „szerokość, długość”. Możesz też przytrzymać mapę, aby ustawić cel. GPS wymaga zgody i HTTPS. Po naciśnięciu GPS rozpoczyna się śledzenie pozycji i prędkości. W trybie START prędkość i znak są u góry, a na dole godzina przyjazdu, czas i dystans. Podczas ruchu (od około 9 km/h) mapa próbuje obracać się według kierunku GPS. Jeśli telefon nie udostępnia kierunku, mapa pozostaje północą do góry. To eksperymentalny obrót widoku, bez pełnego map-matchingu. Pasek manewru pokazuje orientacyjną odległość i kierunek kolejnego skrętu oraz podgląd następnego manewru („POTEM”), gdy dane są dostępne na podstawie danych trasowania; nie zastępuje znaków drogowych. Bez aktualnego GPS manewr nie jest śledzony. Po wybraniu „Wyznacz trasę” wybierz „Płatne” lub „Omijaj płatne”. Po obliczeniu trasy użyj START, aby schować panel i śledzić pozycję na mapie. Znak przy przycisku Menu pokazuje tylko dostępne, orientacyjne dane OpenStreetMap; znak drogowy ma pierwszeństwo. Przycisk Menu ponownie otwiera panel. Gdy pomiar prędkości jest niedostępny, widoczne są kreski. iOS może wstrzymać GPS po wygaszeniu ekranu lub przejściu do innej aplikacji. Po wyznaczeniu trasy i uruchomieniu GPS dolny panel pokazuje szacunkowe pozostałe kilometry, czas i godzinę przyjazdu. Wartości są obliczane z postępu na zaplanowanej trasie, bez korków. Przy zjechaniu z trasy trzeba ją przeliczyć. Po zmianie startu przelicz trasę. Stacje paliw są pobierane z OpenStreetMap. Szukamy w najbliższych około 30 km trasy, pokazując maksymalnie trzy punkty do 3 km w linii prostej od trasy; dostępność zjazdu, kierunek dojazdu, rzeczywista długość objazdu i otwarcie stacji NIE są jeszcze sprawdzane. Nie wybieraj zjazdu bez sprawdzenia znaków i bezpiecznej trasy. To wersja do testów, nie do prowadzenia podczas jazdy. Tryb „Płatne” używa OSRM i nie filtruje dróg płatnych. Tryb „Omijaj płatne” próbuje wyznaczyć trasę przez usługę Valhalla z opcją exclude_tolls; nie gwarantuje uniknięcia każdej opłaty ani uwzględnienia aktualnych przepisów. Jeżeli usługa jest niedostępna, aplikacja zgłosi błąd zamiast po cichu wyznaczać trasę płatną. Zawsze sprawdź znaki i opłaty. Trasy nie uwzględniają korków.</div>
+<div class="actions"><button id="route">Wyznacz trasę</button><button id="drive" style="display:none">▶ START</button><button class="secondary" id="clear">Wyczyść</button><button class="dark" id="toggle">Pomoc</button><button id="diagbtn" type="button">Diagnostyka</button></div>
+<div id="help">Przycisk Diagnostyka pokazuje aktualność GPS, dokładność, kierunek, prędkość i odchylenie od trasy. Przycisk DZIEŃ/NOC zmienia ręcznie jasność i kolory kafelków mapy (motyw jest zapamiętywany w przeglądarce). Wpisz adresy lub współrzędne „szerokość, długość”. Możesz też przytrzymać mapę, aby ustawić cel. GPS wymaga zgody i HTTPS. Po naciśnięciu GPS rozpoczyna się śledzenie pozycji i prędkości. W trybie START prędkość i znak są u góry, a na dole godzina przyjazdu, czas i dystans. Podczas ruchu (od około 9 km/h) mapa próbuje obracać się według kierunku GPS. Jeśli telefon nie udostępnia kierunku, mapa pozostaje północą do góry. To eksperymentalny obrót widoku, bez pełnego map-matchingu. Pasek manewru pokazuje orientacyjną odległość i kierunek kolejnego skrętu oraz podgląd następnego manewru („POTEM”), gdy dane są dostępne na podstawie danych trasowania; nie zastępuje znaków drogowych. Bez aktualnego GPS manewr nie jest śledzony. Po wybraniu „Wyznacz trasę” wybierz „Płatne” lub „Omijaj płatne”. Po obliczeniu trasy użyj START, aby schować panel i śledzić pozycję na mapie. Znak przy przycisku Menu pokazuje tylko dostępne, orientacyjne dane OpenStreetMap; znak drogowy ma pierwszeństwo. Przycisk Menu ponownie otwiera panel. Gdy pomiar prędkości jest niedostępny, widoczne są kreski. iOS może wstrzymać GPS po wygaszeniu ekranu lub przejściu do innej aplikacji. Po wyznaczeniu trasy i uruchomieniu GPS dolny panel pokazuje szacunkowe pozostałe kilometry, czas i godzinę przyjazdu. Wartości są obliczane z postępu na zaplanowanej trasie, bez korków. Przy zjechaniu z trasy trzeba ją przeliczyć. Po zmianie startu przelicz trasę. Stacje paliw są pobierane z OpenStreetMap. Szukamy w najbliższych około 30 km trasy, pokazując maksymalnie trzy punkty do 3 km w linii prostej od trasy; dostępność zjazdu, kierunek dojazdu, rzeczywista długość objazdu i otwarcie stacji NIE są jeszcze sprawdzane. Nie wybieraj zjazdu bez sprawdzenia znaków i bezpiecznej trasy. To wersja do testów, nie do prowadzenia podczas jazdy. Tryb „Płatne” używa OSRM i nie filtruje dróg płatnych. Tryb „Omijaj płatne” próbuje wyznaczyć trasę przez usługę Valhalla z opcją exclude_tolls; nie gwarantuje uniknięcia każdej opłaty ani uwzględnienia aktualnych przepisów. Jeżeli usługa jest niedostępna, aplikacja zgłosi błąd zamiast po cichu wyznaczać trasę płatną. Zawsze sprawdź znaki i opłaty. Trasy nie uwzględniają korków.</div>
 </div>
 <button id="showpanel" class="secondary" aria-label="Otwórz panel" style="display:none">☰ Menu</button><div id="toplimit" aria-label="Orientacyjne ograniczenie prędkości OSM"><span id="limitSign" class="unknown">?</span><div id="topspeed"><strong id="topspeedvalue">—</strong><small>km/h</small></div></div>
 <div id="nextturn" aria-live="off"><span id="turnarrow">↑</span><div id="turndetails"><div id="turndistance">—</div><div id="turnstreet">Oczekiwanie na trasę</div></div><div id="afterturn"><span id="afterarrow">↑</span><div id="afterdetails"><div id="afterlabel">POTEM</div><div id="afterdistance">—</div><div id="afterstreet">—</div></div></div></div>
@@ -131,7 +139,7 @@ body:not(.driving) #themebtn{top:calc(env(safe-area-inset-top,0px) + 225px)}
 </div>
 <div id="mapzoom" aria-label="Powiększenie mapy"><button id="zoomplus" type="button" aria-label="Przybliż mapę">+</button><button id="zoomminus" type="button" aria-label="Oddal mapę">−</button></div>
 <div id="fuelbox"><strong>⛽ Stacje po drodze</strong><div id="fuelitems">Szukam stacji…</div><button class="secondary" id="fuelrefresh">Odśwież</button></div>
-<div class="bottom"><div id="speedbar"><div><span id="speedvalue">—</span> <span id="speedunit">km/h</span></div><div id="gpsstate">GPS nieuruchomiony</div></div><div id="tripbar"><div class="tripitem"><small>PRZYJAZD</small><b id="arrival">—</b></div><div class="tripitem"><small>POZOSTAŁO</small><b id="remaintime">—</b></div><div class="tripitem"><small>DO CELU</small><b id="remainkm">—</b></div></div><div id="result">Gotowe do wyznaczenia trasy</div><div id="status">Mapa i trasy wymagają internetu.</div><div id="saved"></div></div>
+<section id="diagpanel" aria-label="Diagnostyka nawigacji"><div class="diaghead"><strong>🛠 Diagnostyka NaviPetrus</strong><button id="diagclose" type="button">Zamknij</button></div><div id="diagrows">Oczekiwanie na dane…</div><div class="hint">Dane są odświeżane lokalnie. Po odświeżeniu strony pomiary GPS i trasa rozpoczynają się od nowa.</div></section><div class="bottom"><div id="speedbar"><div><span id="speedvalue">—</span> <span id="speedunit">km/h</span></div><div id="gpsstate">GPS nieuruchomiony</div></div><div id="tripbar"><div class="tripitem"><small>PRZYJAZD</small><b id="arrival">—</b></div><div class="tripitem"><small>POZOSTAŁO</small><b id="remaintime">—</b></div><div class="tripitem"><small>DO CELU</small><b id="remainkm">—</b></div></div><div id="result">Gotowe do wyznaczenia trasy</div><div id="status">Mapa i trasy wymagają internetu.</div><div id="saved"></div></div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 const $=id=>document.getElementById(id);
@@ -514,6 +522,7 @@ async function refreshSpeedLimit(pos,accuracy){
 // watchPosition działa tylko podczas dostępności lokalizacji dla strony.
 function updateGps(p){
  const c=p.coords;
+ lastGpsCoords=c;gpsLastError='brak';
  if(!Number.isFinite(c.latitude)||!Number.isFinite(c.longitude))return;
  gpsPoint=[c.latitude,c.longitude];
  lastGpsTime=Date.now();
@@ -550,6 +559,7 @@ $('gps').onclick=()=>{
  $('gpsstate').textContent='Oczekiwanie na GPS…';
  status('Uruchamiam śledzenie GPS…');
  gpsWatch=navigator.geolocation.watchPosition(updateGps,e=>{
+   gpsLastError=e.message||'nieznany';
    $('gpsstate').textContent='GPS: brak aktualnego pomiaru';
    $('speedvalue').textContent='—';
    status('GPS: '+e.message);
@@ -557,6 +567,38 @@ $('gps').onclick=()=>{
    if(e.code===1){navigator.geolocation.clearWatch(gpsWatch);gpsWatch=null}
  },{enableHighAccuracy:true,timeout:15000,maximumAge:0});
 };
+// 0.20: diagnostyka stanu GPS i trasy do testów przed jazdą.
+let lastGpsCoords=null;
+let gpsLastError='brak';
+function diagnosticText(){
+ const age=lastGpsTime?Math.round((Date.now()-lastGpsTime)/1000):null;
+ const fresh=age!==null&&age<=15;
+ const acc=lastGpsCoords?.accuracy;
+ const speed=lastGpsCoords?.speed;
+ const heading=lastGpsCoords?.heading;
+ const near=activeTrip&&gpsPoint&&fresh?nearestOnRoute(gpsPoint,activeTrip):null;
+ const fields=[
+  'GPS: '+(gpsWatch===null?'nieuruchomiony':fresh?'aktywny':'oczekiwanie / nieaktualny'),
+  'Ostatni pomiar: '+(age===null?'brak':age+' s temu'),
+  'Dokładność: '+(Number.isFinite(acc)?Math.round(acc)+' m':'brak'),
+  'Prędkość GPS: '+(Number.isFinite(speed)?Math.round(speed*3.6)+' km/h':'brak danych'),
+  'Kierunek GPS: '+(Number.isFinite(heading)?Math.round(heading)+'°':'brak danych'),
+  'Trasa: '+(activeTrip?'wyznaczona':'brak'),
+  'Tryb jazdy: '+(driving?'START':'wyłączony'),
+  'Śledzenie mapy: '+(followGps?'włączone':'wstrzymane'),
+  'Obrót mapy: '+(driving&&hasBearing?'aktywny':'nieaktywny'),
+  'Odległość od linii trasy: '+(near?Math.round(near.error)+' m':'brak danych'),
+  'Manewry w trasie: '+(activeTrip?activeTrip.maneuvers.length:'—'),
+  'Ostatni błąd GPS: '+gpsLastError
+ ];
+ return fields.join('\\n');
+}
+function updateDiagnostic(){
+ if($('diagpanel').classList.contains('open'))$('diagrows').textContent=diagnosticText();
+}
+$('diagbtn').onclick=()=>{$('diagpanel').classList.toggle('open');updateDiagnostic()};
+$('diagclose').onclick=()=>$('diagpanel').classList.remove('open');
+setInterval(updateDiagnostic,2000);
 setInterval(()=>{
  if(activeTrip)updateTrip();
  if(gpsWatch!==null&&lastGpsTime&&Date.now()-lastGpsTime>15000){
