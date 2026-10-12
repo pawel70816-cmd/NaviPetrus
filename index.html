@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#102236"><title>NaviPetrus 0.1</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#102236;color:#fff}
+#map{position:absolute;inset:0;z-index:0}.leaflet-control-zoom{margin-top:190px!important}
+.panel{position:absolute;z-index:500;top:env(safe-area-inset-top,0px);left:10px;right:10px;background:#102236f2;border-radius:16px;padding:12px;box-shadow:0 6px 22px #0005}
+h1{font-size:19px;margin:0 0 8px;display:flex;justify-content:space-between;align-items:center}small{font-size:11px;color:#b6c8d8}
+.fields{display:grid;grid-template-columns:1fr auto;gap:6px}.fields input{grid-column:1/2}
+input{width:100%;min-width:0;padding:10px;border-radius:9px;border:1px solid #60788d;background:#fff;color:#111;font-size:15px}
+button{border:0;border-radius:10px;padding:10px 12px;font-weight:700;font-size:13px;background:#29c2aa;color:#06211e;cursor:pointer}
+button.secondary{background:#dbe6f0;color:#142c3f}button.dark{background:#38516b;color:white}
+.actions{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}.actions button{flex:1}
+.bottom{position:absolute;z-index:500;bottom:calc(12px + env(safe-area-inset-bottom,0px));left:10px;right:10px;background:#102236f5;border-radius:16px;padding:12px}
+#result{font-size:15px;font-weight:700}#status{font-size:12px;color:#d5e6f2;margin-top:6px}
+#saved{font-size:12px;max-height:105px;overflow:auto;margin-top:6px}#saved button{padding:6px;margin:3px;background:#38516b;color:#fff}
+#help{display:none;font-size:12px;line-height:1.4;margin-top:7px;color:#d5e6f2}
+@media(max-height:650px){.panel{padding:8px}.bottom{padding:8px}}
+</style></head><body><div id="map"></div>
+<div class="panel">
+<h1>🚗 NaviPetrus <small>PROTOTYP 0.1 • TEST</small></h1>
+<div class="fields">
+<input id="start" placeholder="Start: adres lub współrzędne" value="Poznań, Polska">
+<button class="secondary" id="gps" title="Ustaw start z GPS">📍 GPS</button>
+<input id="end" placeholder="Cel: adres lub współrzędne" value="52.31972, 14.55193">
+<button class="secondary" id="save" title="Zapisz cel">★ Zapisz</button>
+</div>
+<div class="actions"><button id="route">Wyznacz trasę</button><button class="secondary" id="clear">Wyczyść</button><button class="dark" id="toggle">Pomoc</button></div>
+<div id="help">Wpisz adresy lub współrzędne „szerokość, długość”. Możesz też przytrzymać mapę, aby ustawić cel. GPS wymaga zgody i zwykle HTTPS. To wersja do testów, nie do prowadzenia podczas jazdy. Trasy nie uwzględniają korków ani opłat.</div>
+</div>
+<div class="bottom"><div id="result">Gotowe do wyznaczenia trasy</div><div id="status">Mapa i trasy wymagają internetu.</div><div id="saved"></div></div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const map=L.map('map',{zoomControl:false}).setView([52.4064,16.9252],9);
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',maxZoom:19}).addTo(map);
+L.control.zoom({position:'bottomright'}).addTo(map);
+let line,markers=[],gpsPoint=null;
+const status=s=>$('status').textContent=s;
+const clean=()=>{if(line)map.removeLayer(line);markers.forEach(m=>map.removeLayer(m));markers=[];line=null};
+const point=s=>{let m=s.trim().match(/^(-?\d+(?:\.\d+)?)\s*[,;]\s*(-?\d+(?:\.\d+)?)$/);if(!m)return null;let a=+m[1],b=+m[2];return Math.abs(a)<=90&&Math.abs(b)<=180?[a,b]:null};
+async function geocode(s){let p=point(s);if(p)return p;
+const u='https://nominatim.openstreetmap.org/search?format=json&limit=1&q='+encodeURIComponent(s);
+const r=await fetch(u,{headers:{'Accept-Language':'pl'}});if(!r.ok)throw Error('Wyszukiwanie adresu niedostępne');const j=await r.json();if(!j.length)throw Error('Nie znaleziono adresu: '+s);return [+j[0].lat,+j[0].lon]}
+$('route').onclick=async()=>{try{
+$('route').disabled=true;status('Szukam adresów…');
+let a=await geocode($('start').value);let b=await geocode($('end').value);
+status('Obliczam trasę…');
+const u=`https://router.project-osrm.org/route/v1/driving/${a[1]},${a[0]};${b[1]},${b[0]}?overview=full&geometries=geojson&steps=false`;
+let r=await fetch(u);if(!r.ok)throw Error('Serwer tras niedostępny');let j=await r.json();if(!j.routes?.length)throw Error('Nie znaleziono trasy');
+clean();let t=j.routes[0];line=L.geoJSON(t.geometry,{style:{color:'#176bf1',weight:6,opacity:.9}}).addTo(map);
+markers=[L.marker(a).addTo(map).bindPopup('Start'),L.marker(b).addTo(map).bindPopup('Cel')];
+map.fitBounds(line.getBounds(),{padding:[35,35]});
+let km=(t.distance/1000).toFixed(1),min=Math.round(t.duration/60);
+$('result').textContent=`${km} km • ${Math.floor(min/60)} h ${min%60} min`;
+status('Szacunkowy czas bez aktualnych korków. Trasa może zawierać płatne odcinki.');
+}catch(e){status('Błąd: '+e.message)}finally{$('route').disabled=false}};
+$('gps').onclick=()=>{if(!navigator.geolocation){status('GPS niedostępny');return}
+status('Pobieram pozycję GPS…');navigator.geolocation.getCurrentPosition(p=>{
+gpsPoint=[p.coords.latitude,p.coords.longitude];$('start').value=gpsPoint.map(v=>v.toFixed(6)).join(', ');
+map.setView(gpsPoint,14);status('Pozycja GPS ustawiona jako start.');
+},e=>status('GPS: '+e.message),{enableHighAccuracy:true,timeout:12000})};
+$('clear').onclick=()=>{clean();$('result').textContent='Gotowe do wyznaczenia trasy';status('Trasa wyczyszczona.')};
+$('toggle').onclick=()=>$('help').style.display=$('help').style.display==='block'?'none':'block';
+function saved(){let a=JSON.parse(localStorage.getItem('navipetrus_places')||'[]');$('saved').replaceChildren();if(a.length){let t=document.createElement('span');t.textContent='Zapisane cele: ';$('saved').append(t)}a.forEach((x,i)=>{let b=document.createElement('button');b.textContent=x.name;b.onclick=()=>{$('end').value=x.address;status('Wybrano zapisany cel.')};$('saved').append(b)})}
+$('save').onclick=()=>{let address=$('end').value.trim();if(!address)return status('Najpierw wpisz cel.');let name=prompt('Nazwa zapisanego miejsca:',address);if(!name)return;let a=JSON.parse(localStorage.getItem('navipetrus_places')||'[]');a.push({name,address});localStorage.setItem('navipetrus_places',JSON.stringify(a.slice(-15)));saved();status('Cel zapisany w tej przeglądarce.')};
+map.on('contextmenu',e=>{$('end').value=e.latlng.lat.toFixed(6)+', '+e.latlng.lng.toFixed(6);status('Cel ustawiony z mapy.')});
+saved();
+</script></body></html>
