@@ -139,9 +139,13 @@ body.driving #fuelbox{max-height:min(35dvh,250px)}
 #alternatives button.chosen{background:#29c2aa}
 #alternatives .altnote{font-size:11px;color:#d5e6f2}
 body.driving #alternatives{display:none!important}
+
+/* 0.24: ostrzezenie po serii wiarygodnych pomiarow GPS, bez automatycznego przeliczania */
+#offrouteAlert{display:none;position:absolute;z-index:545;left:12px;right:12px;top:calc(env(safe-area-inset-top,0px) + 160px);background:#802a1d;color:#fff;border:2px solid #ffbd83;border-radius:12px;padding:10px 12px;font-weight:750;font-size:14px;box-shadow:0 4px 14px #0008;pointer-events:none;text-align:center}
+body.driving #offrouteAlert.visible{display:block}
 </style></head><body><div id="map"></div><button id="themebtn" type="button" aria-label="Zmień motyw mapy">☾ NOC</button><button id="recenter" type="button" title="Wyśrodkuj na GPS i włącz śledzenie" aria-label="Wróć do mojej pozycji GPS">◎</button>
 <div class="panel">
-<h1>🚗 NaviPetrus <small>PROTOTYP 0.23 • TEST</small></h1>
+<h1>🚗 NaviPetrus <small>PROTOTYP 0.24 • TEST</small></h1>
 <div class="fields">
 <input id="start" placeholder="Start: adres lub współrzędne" value="Poznań, Polska">
 <button class="secondary" id="gps" title="Ustaw start z GPS">📍 GPS</button>
@@ -161,6 +165,7 @@ body.driving #alternatives{display:none!important}
 <div id="fuelbox"><strong>⛽ Stacje po drodze</strong><div id="fuelitems">Szukam stacji…</div><button class="secondary" id="fuelrefresh">Blisko</button> <button class="secondary" id="fuelfar">Szukaj dalej</button></div>
 <section id="diagpanel" aria-label="Diagnostyka nawigacji"><div class="diaghead"><strong>🛠 Diagnostyka NaviPetrus</strong><button id="diagclose" type="button">Zamknij</button></div><div id="diagrows">Oczekiwanie na dane…</div><div class="hint">Dane są odświeżane lokalnie. Po odświeżeniu strony pomiary GPS i trasa rozpoczynają się od nowa.</div></section><div class="bottom"><div id="speedbar"><div><span id="speedvalue">—</span> <span id="speedunit">km/h</span></div><div id="gpsstate">GPS nieuruchomiony</div></div><div id="tripbar"><div class="tripitem"><small>PRZYJAZD</small><b id="arrival">—</b></div><div class="tripitem"><small>POZOSTAŁO</small><b id="remaintime">—</b></div><div class="tripitem"><small>DO CELU</small><b id="remainkm">—</b></div></div><div id="result">Gotowe do wyznaczenia trasy</div><div id="status">Mapa i trasy wymagają internetu.</div><div id="alternatives" aria-label="Wybór trasy alternatywnej"></div><div id="saved"></div></div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<div id="offrouteAlert" role="alert" aria-live="polite">⚠️ Zjechano z wyznaczonej trasy. Sprawdź drogę.</div>
 <script>
 const $=id=>document.getElementById(id);
 let nightMode=false;
@@ -189,6 +194,19 @@ const status=s=>$('status').textContent=s;
 const speedDisplay=new MutationObserver(()=>{$('topspeedvalue').textContent=$('speedvalue').textContent});
 speedDisplay.observe($('speedvalue'),{childList:true,characterData:true,subtree:true});
 let driving=false,followGps=true;
+let offRouteHits=0,onRouteHits=0,offRouteConfirmed=false;
+function resetOffRoute(){offRouteHits=0;onRouteHits=0;offRouteConfirmed=false;$('offrouteAlert').classList.remove('visible');}
+function checkOffRoute(accuracy){
+ if(!driving||!activeTrip||!gpsPoint||!Number.isFinite(accuracy)||accuracy>35)return;
+ const deviation=nearestOnRoute(gpsPoint,activeTrip).error;
+ // Wymagamy 3 kolejnych poprawnych odczytow: GPS potrafi chwilowo skakac.
+ if(deviation>150){offRouteHits++;onRouteHits=0;}
+ else if(deviation<75){onRouteHits++;offRouteHits=0;}
+ else {offRouteHits=0;onRouteHits=0;}
+ if(!offRouteConfirmed&&offRouteHits>=3){offRouteConfirmed=true;$('offrouteAlert').classList.add('visible');status('⚠️ Zjechano z trasy (3 kolejne pomiary GPS, ponad 150 m).');}
+ if(offRouteConfirmed&&onRouteHits>=3){resetOffRoute();status('Powrót na wyznaczoną trasę.');}
+}
+
 map.on('dragstart',()=>{
  if(driving){followGps=false;$('recenter').classList.add('manual');}
 });
@@ -219,6 +237,7 @@ function updateBearing(coords){
 }
 function setDriving(on){
  driving=on;
+ resetOffRoute();
  if(on){followGps=true;$('recenter').classList.remove('manual');}
  document.body.classList.toggle('driving',on);
  if(!on){hasBearing=false;mapBearing=0;}
@@ -273,11 +292,11 @@ function updateTrip(){
  let distance=trip.distance,duration=trip.duration;
  if(gpsPoint&&Date.now()-lastGpsTime<20000){
    const near=nearestOnRoute(gpsPoint,trip);
-   if(near.error>150){
+   if(driving&&offRouteConfirmed){
      $('remainkm').textContent='—';
      $('remaintime').textContent='—';
      $('arrival').textContent='—';
-     status('Poza wyznaczoną trasą (ponad 150 m). Przelicz trasę, aby odświeżyć dojazd.');
+     status('Poza wyznaczoną trasą. Przelicz trasę, aby odświeżyć dojazd.');
      return;
    }
    const done=Math.max(0,Math.min(1,near.progress/trip.geometryLength));
@@ -288,7 +307,7 @@ function updateTrip(){
  $('remaintime').textContent=durationLabel(duration);
  $('arrival').textContent=new Date(Date.now()+duration*1000).toLocaleTimeString('pl-PL',{hour:'2-digit',minute:'2-digit'});
 }
-function clearTrip(){routeOptions=[];$('alternatives').classList.remove('active');$('alternatives').replaceChildren();selectedFuelStop=null;navTrack=null;showAfter(null);showTurn("↑","—","Oczekiwanie na trasę");fuelRequest++;fuelMarkers.forEach(m=>map.removeLayer(m));fuelMarkers=[];$('fuelbox').classList.remove('active');activeTrip=null;$('tripbar').classList.remove('active')}
+function clearTrip(){resetOffRoute();routeOptions=[];$('alternatives').classList.remove('active');$('alternatives').replaceChildren();selectedFuelStop=null;navTrack=null;showAfter(null);showTurn("↑","—","Oczekiwanie na trasę");fuelRequest++;fuelMarkers.forEach(m=>map.removeLayer(m));fuelMarkers=[];$('fuelbox').classList.remove('active');activeTrip=null;$('tripbar').classList.remove('active')}
 // 0.5: punkty amenity=fuel z OSM, bez punktów wyłącznie ładowania EV.
 // To przybliżenie bliskości trasy, NIE potwierdzenie dostępnego zjazdu.
 function distanceToPolyline(pos,trip){
@@ -402,7 +421,7 @@ async function loadFuel(far=false){
    const marker=L.circleMarker([st.lat,st.lon],{radius:7,color:'#fff',weight:2,fillColor:'#e59b15',fillOpacity:.95}).addTo(map);
    marker.bindPopup('⛽ '+st.name.replaceAll('&','&amp;').replaceAll('<','&lt;')+'<br>Za ok. '+(st.ahead/1000).toFixed(1)+' km wzdłuż trasy<br>Dojazd i zjazd niezweryfikowane');fuelMarkers.push(marker);
   }
-  const note=document.createElement('small');note.textContent='TEST 0.23 • '+source+' • '+stations.length+' stacji do 500 m od trasy • '+(partial?'część odcinków nie została sprawdzona':'lista może być niepełna')+' • dojazd niezweryfikowany';$('fuelitems').append(note);
+  const note=document.createElement('small');note.textContent='TEST 0.24 • '+source+' • '+stations.length+' stacji do 500 m od trasy • '+(partial?'część odcinków nie została sprawdzona':'lista może być niepełna')+' • dojazd niezweryfikowany';$('fuelitems').append(note);
  }catch(e){fuelInfo('Nie udało się pobrać stacji: '+(e.name==='AbortError'?'przekroczono czas':e.message||'błąd')+'. Spróbuj później.');}
 }
 // 0.22: punkt pośredni stacji — dwa odcinki, bez zmiany pierwotnego celu.
@@ -683,7 +702,7 @@ function updateGps(p){
  $('speedvalue').textContent=Number.isFinite(speed)&&speed>=0
    ? String(Math.round(speed*3.6)) : '—';
  $('gpsstate').textContent='GPS aktywny • dokładność '+Math.round(c.accuracy||0)+' m';
- if(activeTrip){updateTrip();if(driving&&Number.isFinite(c.accuracy)&&c.accuracy<=35)updateManeuver();}
+ if(activeTrip){checkOffRoute(c.accuracy);updateTrip();if(driving&&Number.isFinite(c.accuracy)&&c.accuracy<=35&&!offRouteConfirmed)updateManeuver();}
  if(driving)refreshSpeedLimit(gpsPoint,c.accuracy);
  updateBearing(c);
  if(driving&&followGps)map.panTo(gpsPoint,{animate:true,duration:.3});
