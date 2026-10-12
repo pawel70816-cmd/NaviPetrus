@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#102236"><title>NaviPetrus 0.23</title>
+<meta name="theme-color" content="#102236"><title>NaviPetrus 0.26.1</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#102236;color:#fff}
@@ -157,9 +157,16 @@ body.driving #tripbar .tripitem:nth-child(2) b{font-size:16px}
 body.driving #tripbar .tripitem small{font-size:9px}
 body.driving #nextturn{padding:7px 9px;top:calc(env(safe-area-inset-top,0px) + 80px)}
 body.driving #offrouteAlert{top:calc(env(safe-area-inset-top,0px) + 153px)}
+
+/* 0.26.1: trzy male etykiety stacji zamiast szerokiego panelu */
+body.driving #fuelbox{top:calc(env(safe-area-inset-top,0px) + 176px);right:8px;width:fit-content;max-width:min(132px,37vw);min-width:0;max-height:none;padding:0;background:transparent;box-shadow:none;border-radius:0;overflow:visible}
+body.driving #fuelbox>strong{display:none}
+body.driving #fuelitems{display:flex;flex-direction:column;align-items:stretch;gap:5px;margin:0}
+body.driving #fuelitems .compactFuel{display:block;width:100%;max-width:100%;min-width:0;margin:0;padding:7px 7px;background:#102236e8;color:#fff;text-align:center;font-size:11px;font-weight:700;line-height:1.15;border-radius:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-shadow:0 2px 8px #0005}
+body.driving #fuelitems:not(:has(.compactFuel)){background:#102236d9;border-radius:9px;padding:6px;font-size:10px;max-width:132px}
 </style></head><body><div id="map"></div><button id="themebtn" type="button" aria-label="Zmień motyw mapy">☾ NOC</button><button id="recenter" type="button" title="Wyśrodkuj na GPS i włącz śledzenie" aria-label="Wróć do mojej pozycji GPS">◎</button>
 <div class="panel">
-<h1>🚗 NaviPetrus <small>PROTOTYP 0.26 • TEST</small></h1>
+<h1>🚗 NaviPetrus <small>PROTOTYP 0.26.1 • TEST</small></h1>
 <div class="fields">
 <input id="start" placeholder="Start: adres lub współrzędne" value="Poznań, Polska">
 <button class="secondary" id="gps" title="Ustaw start z GPS">📍 GPS</button>
@@ -486,7 +493,7 @@ async function loadFuel(far=false){
    marker.bindPopup('⛽ '+st.name.replaceAll('&','&amp;').replaceAll('<','&lt;')+'<br>Za ok. '+(st.ahead/1000).toFixed(1)+' km wzdłuż trasy<br>Dojazd i zjazd niezweryfikowane');fuelMarkers.push(marker);
   }
   if(driving){renderCompactFuel();return;}
-  const note=document.createElement('small');note.textContent='TEST 0.26 • '+source+' • '+stations.length+' stacji do 500 m od trasy • '+(partial?'część odcinków nie została sprawdzona':'lista może być niepełna')+' • dojazd niezweryfikowany';$('fuelitems').append(note);
+  const note=document.createElement('small');note.textContent='TEST 0.26.1 • '+source+' • '+stations.length+' stacji do 500 m od trasy • '+(partial?'część odcinków nie została sprawdzona':'lista może być niepełna')+' • dojazd niezweryfikowany';$('fuelitems').append(note);
  }catch(e){fuelInfo('Nie udało się pobrać stacji: '+(e.name==='AbortError'?'przekroczono czas':e.message||'błąd')+'. Spróbuj później.');}
 }
 // 0.26: w czasie jazdy tylko trzy najbliższe, jeszcze nieminięte stacje.
