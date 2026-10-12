@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#102236"><title>NaviPetrus 0.7</title>
+<meta name="theme-color" content="#102236"><title>NaviPetrus 0.8</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#102236;color:#fff}
@@ -24,9 +24,18 @@ button.secondary{background:#dbe6f0;color:#142c3f}button.dark{background:#38516b
 body.driving .panel{display:none}body.driving #showpanel{display:block!important}
 body.driving #fuelbox{top:calc(env(safe-area-inset-top,0px) + 60px)}
 @media(max-height:650px){.panel{padding:8px}.bottom{padding:8px}}
+
+/* 0.8: zwięzły pasek informacji po wyznaczeniu trasy */
+body:has(#tripbar.active) .bottom #result{display:none}
+body.driving .bottom{padding:9px 12px;bottom:calc(8px + env(safe-area-inset-bottom,0px))}
+body.driving .bottom #result,body.driving .bottom #status,body.driving .bottom #saved{display:none}
+body.driving #speedbar{margin-bottom:5px;padding-bottom:5px}
+body.driving #tripbar{margin:5px 0 0;padding:6px 0 0;border-top:0;border-bottom:0;gap:5px}
+body.driving #tripbar .tripitem b{font-size:17px}
+body.driving #speedvalue{font-size:26px}
 </style></head><body><div id="map"></div>
 <div class="panel">
-<h1>🚗 NaviPetrus <small>PROTOTYP 0.7 • TEST</small></h1>
+<h1>🚗 NaviPetrus <small>PROTOTYP 0.8 • TEST</small></h1>
 <div class="fields">
 <input id="start" placeholder="Start: adres lub współrzędne" value="Poznań, Polska">
 <button class="secondary" id="gps" title="Ustaw start z GPS">📍 GPS</button>
