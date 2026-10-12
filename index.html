@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#102236"><title>NaviPetrus 0.10</title>
+<meta name="theme-color" content="#102236"><title>NaviPetrus 0.11</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#102236;color:#fff}
@@ -38,10 +38,20 @@ body.driving #speedvalue{font-size:26px}
 #limitSign{width:42px;height:42px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:white;color:#101010;border:5px solid #d52929;font-weight:850;font-size:16px;box-sizing:border-box}
 #limitSign.unknown{color:#777;border-color:#999}
 #gpsstate{max-width:33%}
-body.driving #limitbadge{display:flex}
+/* 0.11: znak u góry obok Menu, dolny panel bez znaku */
+#toplimit{display:none;position:absolute;z-index:525;top:calc(env(safe-area-inset-top,0px) + 10px);left:112px;align-items:center;gap:4px;padding:3px 7px;background:#102236e8;border-radius:13px;box-shadow:0 3px 12px #0006}
+#toplimit small{font-size:9px}
+body.driving #toplimit{display:flex}
+body.driving #fuelbox{top:calc(env(safe-area-inset-top,0px) + 10px);right:10px;width:min(185px,44vw);max-height:170px;overflow:auto}
+body.driving #fuelbox strong{font-size:12px}
+body.driving #fuelbox .fuelrow{padding:4px 0}
+body.driving #fuelbox button{padding:3px 7px}
+body.driving #fuelbox #fuelitems{font-size:11px}
+@media(max-width:380px){#toplimit{left:102px}body.driving #fuelbox{width:42vw}}
+
 </style></head><body><div id="map"></div>
 <div class="panel">
-<h1>🚗 NaviPetrus <small>PROTOTYP 0.10 • TEST</small></h1>
+<h1>🚗 NaviPetrus <small>PROTOTYP 0.11 • TEST</small></h1>
 <div class="fields">
 <input id="start" placeholder="Start: adres lub współrzędne" value="Poznań, Polska">
 <button class="secondary" id="gps" title="Ustaw start z GPS">📍 GPS</button>
@@ -50,14 +60,14 @@ body.driving #limitbadge{display:flex}
 </div>
 
 <div class="actions"><button id="route">Wyznacz trasę</button><button id="drive" style="display:none">▶ START</button><button class="secondary" id="clear">Wyczyść</button><button class="dark" id="toggle">Pomoc</button></div>
-<div id="help">Wpisz adresy lub współrzędne „szerokość, długość”. Możesz też przytrzymać mapę, aby ustawić cel. GPS wymaga zgody i HTTPS. Po naciśnięciu GPS rozpoczyna się śledzenie pozycji i prędkości. Po wybraniu „Wyznacz trasę” wybierz „Płatne” lub „Omijaj płatne”. Po obliczeniu trasy użyj START, aby schować panel i śledzić pozycję na mapie. Znak LIMIT OSM pokazuje tylko dostępne, orientacyjne dane OpenStreetMap; znak drogowy ma pierwszeństwo. Przycisk Menu ponownie otwiera panel. Gdy pomiar prędkości jest niedostępny, widoczne są kreski. iOS może wstrzymać GPS po wygaszeniu ekranu lub przejściu do innej aplikacji. Po wyznaczeniu trasy i uruchomieniu GPS dolny panel pokazuje szacunkowe pozostałe kilometry, czas i godzinę przyjazdu. Wartości są obliczane z postępu na zaplanowanej trasie, bez korków. Przy zjechaniu z trasy trzeba ją przeliczyć. Po zmianie startu przelicz trasę. Stacje paliw są pobierane z OpenStreetMap. Szukamy w najbliższych około 30 km trasy, pokazując maksymalnie trzy punkty do 3 km w linii prostej od trasy; dostępność zjazdu, kierunek dojazdu, rzeczywista długość objazdu i otwarcie stacji NIE są jeszcze sprawdzane. Nie wybieraj zjazdu bez sprawdzenia znaków i bezpiecznej trasy. To wersja do testów, nie do prowadzenia podczas jazdy. Tryb „Płatne” używa OSRM i nie filtruje dróg płatnych. Tryb „Omijaj płatne” próbuje wyznaczyć trasę przez usługę Valhalla z opcją exclude_tolls; nie gwarantuje uniknięcia każdej opłaty ani uwzględnienia aktualnych przepisów. Jeżeli usługa jest niedostępna, aplikacja zgłosi błąd zamiast po cichu wyznaczać trasę płatną. Zawsze sprawdź znaki i opłaty. Trasy nie uwzględniają korków.</div>
+<div id="help">Wpisz adresy lub współrzędne „szerokość, długość”. Możesz też przytrzymać mapę, aby ustawić cel. GPS wymaga zgody i HTTPS. Po naciśnięciu GPS rozpoczyna się śledzenie pozycji i prędkości. Po wybraniu „Wyznacz trasę” wybierz „Płatne” lub „Omijaj płatne”. Po obliczeniu trasy użyj START, aby schować panel i śledzić pozycję na mapie. Znak OSM przy przycisku Menu pokazuje tylko dostępne, orientacyjne dane OpenStreetMap; znak drogowy ma pierwszeństwo. Przycisk Menu ponownie otwiera panel. Gdy pomiar prędkości jest niedostępny, widoczne są kreski. iOS może wstrzymać GPS po wygaszeniu ekranu lub przejściu do innej aplikacji. Po wyznaczeniu trasy i uruchomieniu GPS dolny panel pokazuje szacunkowe pozostałe kilometry, czas i godzinę przyjazdu. Wartości są obliczane z postępu na zaplanowanej trasie, bez korków. Przy zjechaniu z trasy trzeba ją przeliczyć. Po zmianie startu przelicz trasę. Stacje paliw są pobierane z OpenStreetMap. Szukamy w najbliższych około 30 km trasy, pokazując maksymalnie trzy punkty do 3 km w linii prostej od trasy; dostępność zjazdu, kierunek dojazdu, rzeczywista długość objazdu i otwarcie stacji NIE są jeszcze sprawdzane. Nie wybieraj zjazdu bez sprawdzenia znaków i bezpiecznej trasy. To wersja do testów, nie do prowadzenia podczas jazdy. Tryb „Płatne” używa OSRM i nie filtruje dróg płatnych. Tryb „Omijaj płatne” próbuje wyznaczyć trasę przez usługę Valhalla z opcją exclude_tolls; nie gwarantuje uniknięcia każdej opłaty ani uwzględnienia aktualnych przepisów. Jeżeli usługa jest niedostępna, aplikacja zgłosi błąd zamiast po cichu wyznaczać trasę płatną. Zawsze sprawdź znaki i opłaty. Trasy nie uwzględniają korków.</div>
 </div>
-<button id="showpanel" class="secondary" aria-label="Otwórz panel" style="display:none">☰ Menu</button>
+<button id="showpanel" class="secondary" aria-label="Otwórz panel" style="display:none">☰ Menu</button><div id="toplimit" aria-label="Orientacyjne ograniczenie prędkości OSM"><span id="limitSign" class="unknown">?</span><small>OSM</small></div>
 <div id="routeDialog" class="modal" style="display:none" role="dialog" aria-modal="true" aria-label="Wybierz trasę">
  <div class="modalcard"><h2>Wybierz trasę</h2><button id="paid">Płatne</button><button id="free" class="secondary">Omijaj płatne</button><button id="cancelMode" class="dark">Anuluj</button></div>
 </div>
 <div id="fuelbox"><strong>⛽ Stacje po drodze</strong><div id="fuelitems">Szukam stacji…</div><button class="secondary" id="fuelrefresh">Odśwież</button></div>
-<div class="bottom"><div id="speedbar"><div><span id="speedvalue">—</span> <span id="speedunit">km/h</span></div><div id="limitbadge"><small>LIMIT OSM<br>orientacyjny</small><span id="limitSign" class="unknown">?</span></div><div id="gpsstate">GPS nieuruchomiony</div></div><div id="tripbar"><div class="tripitem"><small>DO CELU</small><b id="remainkm">—</b></div><div class="tripitem"><small>POZOSTAŁO</small><b id="remaintime">—</b></div><div class="tripitem"><small>PRZYJAZD</small><b id="arrival">—</b></div></div><div id="result">Gotowe do wyznaczenia trasy</div><div id="status">Mapa i trasy wymagają internetu.</div><div id="saved"></div></div>
+<div class="bottom"><div id="speedbar"><div><span id="speedvalue">—</span> <span id="speedunit">km/h</span></div><div id="gpsstate">GPS nieuruchomiony</div></div><div id="tripbar"><div class="tripitem"><small>DO CELU</small><b id="remainkm">—</b></div><div class="tripitem"><small>POZOSTAŁO</small><b id="remaintime">—</b></div><div class="tripitem"><small>PRZYJAZD</small><b id="arrival">—</b></div></div><div id="result">Gotowe do wyznaczenia trasy</div><div id="status">Mapa i trasy wymagają internetu.</div><div id="saved"></div></div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 const $=id=>document.getElementById(id);
