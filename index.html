@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#102236"><title>NaviPetrus 0.22</title>
+<meta name="theme-color" content="#102236"><title>NaviPetrus 0.22.1</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#102236;color:#fff}
@@ -119,9 +119,21 @@ body:not(.driving) #themebtn{top:calc(env(safe-area-inset-top,0px) + 225px)}
 #diagpanel button{font-size:12px;padding:6px 10px}
 #diagrows{margin:8px 0;white-space:pre-line;font-variant-numeric:tabular-nums}
 #diagpanel .hint{color:#c5d6e5;font-size:11px}
+/* 0.22.1: ograniczenie interfejsu do szerokosci ekranu iPhone */
+html,body{width:100%;max-width:100%;height:100%;overflow:hidden;overscroll-behavior:none}
+body{position:fixed;inset:0;touch-action:pan-x pan-y}
+#map{width:100%;height:100%;overflow:hidden}
+.panel,.bottom,#nextturn,#diagpanel{min-width:0;max-width:calc(100% - 20px)}
+.panel,.bottom{overflow-wrap:anywhere}
+.fields{grid-template-columns:minmax(0,1fr) auto;min-width:0}
+.actions{min-width:0}.actions button{min-width:0}
+#nextturn{overflow:hidden}#turndetails{min-width:0}#afterturn{min-width:0;flex-shrink:1}
+#fuelbox,body.driving #fuelbox{box-sizing:border-box;max-width:calc(100vw - 20px);max-height:min(48dvh,390px);overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;overflow-wrap:anywhere}
+body.driving #fuelbox{max-height:min(35dvh,250px)}
+#fuelitems{min-width:0}#fuelitems .fuelrow{overflow-wrap:anywhere}
 </style></head><body><div id="map"></div><button id="themebtn" type="button" aria-label="Zmień motyw mapy">☾ NOC</button><button id="recenter" type="button" title="Wyśrodkuj na GPS i włącz śledzenie" aria-label="Wróć do mojej pozycji GPS">◎</button>
 <div class="panel">
-<h1>🚗 NaviPetrus <small>PROTOTYP 0.22 • TEST</small></h1>
+<h1>🚗 NaviPetrus <small>PROTOTYP 0.22.1 • TEST</small></h1>
 <div class="fields">
 <input id="start" placeholder="Start: adres lub współrzędne" value="Poznań, Polska">
 <button class="secondary" id="gps" title="Ustaw start z GPS">📍 GPS</button>
@@ -381,7 +393,7 @@ async function loadFuel(far=false){
    const marker=L.circleMarker([st.lat,st.lon],{radius:7,color:'#fff',weight:2,fillColor:'#e59b15',fillOpacity:.95}).addTo(map);
    marker.bindPopup('⛽ '+st.name.replaceAll('&','&amp;').replaceAll('<','&lt;')+'<br>Za ok. '+(st.ahead/1000).toFixed(1)+' km wzdłuż trasy<br>Dojazd i zjazd niezweryfikowane');fuelMarkers.push(marker);
   }
-  const note=document.createElement('small');note.textContent='TEST 0.22 • '+source+' • '+stations.length+' stacji do 500 m od trasy • '+(partial?'część odcinków nie została sprawdzona':'lista może być niepełna')+' • dojazd niezweryfikowany';$('fuelitems').append(note);
+  const note=document.createElement('small');note.textContent='TEST 0.22.1 • '+source+' • '+stations.length+' stacji do 500 m od trasy • '+(partial?'część odcinków nie została sprawdzona':'lista może być niepełna')+' • dojazd niezweryfikowany';$('fuelitems').append(note);
  }catch(e){fuelInfo('Nie udało się pobrać stacji: '+(e.name==='AbortError'?'przekroczono czas':e.message||'błąd')+'. Spróbuj później.');}
 }
 // 0.22: punkt pośredni stacji — dwa odcinki, bez zmiany pierwotnego celu.
