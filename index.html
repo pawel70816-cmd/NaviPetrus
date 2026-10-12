@@ -143,9 +143,23 @@ body.driving #alternatives{display:none!important}
 /* 0.24: ostrzezenie po serii wiarygodnych pomiarow GPS, bez automatycznego przeliczania */
 #offrouteAlert{display:none;position:absolute;z-index:545;left:12px;right:12px;top:calc(env(safe-area-inset-top,0px) + 160px);background:#802a1d;color:#fff;border:2px solid #ffbd83;border-radius:12px;padding:10px 12px;font-weight:750;font-size:14px;box-shadow:0 4px 14px #0008;pointer-events:none;text-align:center}
 body.driving #offrouteAlert.visible{display:block}
+
+/* 0.26: zwarty, nieprzesuwający strony widok jazdy */
+body.driving #fuelbox{top:calc(env(safe-area-inset-top,0px) + 176px);right:9px;width:min(175px,46vw);max-height:148px;padding:7px 8px;overflow:hidden}
+body.driving #fuelbox strong{font-size:11px;white-space:nowrap}
+body.driving #fuelitems{display:flex;flex-direction:column;gap:3px;margin-top:5px}
+body.driving #fuelitems .compactFuel{display:block;width:100%;margin:0;padding:5px 4px;background:#294761;color:#fff;text-align:left;font-size:11px;border-radius:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body.driving #fuelrefresh,body.driving #fuelfar{display:none}
+body.driving .bottom{left:10px;right:10px;padding:7px 10px;bottom:calc(7px + env(safe-area-inset-bottom,0px))}
+body.driving #tripbar{margin:0;padding:1px 0;gap:3px}
+body.driving #tripbar .tripitem b{font-size:15px}
+body.driving #tripbar .tripitem:nth-child(2) b{font-size:16px}
+body.driving #tripbar .tripitem small{font-size:9px}
+body.driving #nextturn{padding:7px 9px;top:calc(env(safe-area-inset-top,0px) + 80px)}
+body.driving #offrouteAlert{top:calc(env(safe-area-inset-top,0px) + 153px)}
 </style></head><body><div id="map"></div><button id="themebtn" type="button" aria-label="Zmień motyw mapy">☾ NOC</button><button id="recenter" type="button" title="Wyśrodkuj na GPS i włącz śledzenie" aria-label="Wróć do mojej pozycji GPS">◎</button>
 <div class="panel">
-<h1>🚗 NaviPetrus <small>PROTOTYP 0.25.1 • TEST</small></h1>
+<h1>🚗 NaviPetrus <small>PROTOTYP 0.26 • TEST</small></h1>
 <div class="fields">
 <input id="start" placeholder="Start: adres lub współrzędne" value="Poznań, Polska">
 <button class="secondary" id="gps" title="Ustaw start z GPS">📍 GPS</button>
@@ -194,6 +208,7 @@ const status=s=>$('status').textContent=s;
 const speedDisplay=new MutationObserver(()=>{$('topspeedvalue').textContent=$('speedvalue').textContent});
 speedDisplay.observe($('speedvalue'),{childList:true,characterData:true,subtree:true});
 let driving=false,followGps=true;
+let fuelCandidates=[],fuelListOrigin=0; // 0.26: mała lista trzech kolejnych stacji
 let offRouteHits=0,onRouteHits=0,offRouteConfirmed=false;
 // 0.25: automatyczne przeliczanie po potwierdzonym zjechaniu z trasy.
 let autoRerouteBusy=false,lastAutoRerouteAt=0,autoRerouteFailures=0;
@@ -287,6 +302,7 @@ function setDriving(on){
  resetOffRoute();
  if(on){followGps=true;$('recenter').classList.remove('manual');}
  document.body.classList.toggle('driving',on);
+ if(on){if(!fuelCandidates.length)loadFuel(false);else renderCompactFuel();}else{$('fuelbox').classList.remove('active');}
  if(!on){hasBearing=false;mapBearing=0;}
  applyMapBearing();
  $('showpanel').style.display=on?'block':'none';
@@ -381,7 +397,7 @@ function fuelPointAt(trip,progress){
 async function loadFuel(far=false){
  if(!activeTrip)return;
  const request=++fuelRequest,trip=activeTrip;
- $('fuelbox').classList.add('active');
+ if(driving)$('fuelbox').classList.add('active');
  const fuelInfo=message=>{if(request===fuelRequest&&trip===activeTrip)$('fuelitems').textContent=message};
  const current=fuelProgress(),useGps=!!(gpsPoint&&Date.now()-lastGpsTime<30000);
  const origin=useGps?gpsPoint:trip.points[0];
@@ -458,6 +474,7 @@ async function loadFuel(far=false){
    stations.push({lat,lon,name:raw,ahead,offset:near.error});
   }
   stations.sort((a,b)=>a.ahead-b.ahead||a.offset-b.offset);
+  fuelCandidates=stations;fuelListOrigin=current;
   $('fuelitems').replaceChildren();
   if(!stations.length){fuelInfo('Nie znaleziono stacji do 500 m od trasy ('+source+', '+result.length+' obiektów). '+(partial?'Nie wszystkie odcinki zostały sprawdzone.':'Wynik może być niepełny.'));return;}
   for(const st of stations.slice(0,12)){
@@ -468,8 +485,24 @@ async function loadFuel(far=false){
    const marker=L.circleMarker([st.lat,st.lon],{radius:7,color:'#fff',weight:2,fillColor:'#e59b15',fillOpacity:.95}).addTo(map);
    marker.bindPopup('⛽ '+st.name.replaceAll('&','&amp;').replaceAll('<','&lt;')+'<br>Za ok. '+(st.ahead/1000).toFixed(1)+' km wzdłuż trasy<br>Dojazd i zjazd niezweryfikowane');fuelMarkers.push(marker);
   }
-  const note=document.createElement('small');note.textContent='TEST 0.25.1 • '+source+' • '+stations.length+' stacji do 500 m od trasy • '+(partial?'część odcinków nie została sprawdzona':'lista może być niepełna')+' • dojazd niezweryfikowany';$('fuelitems').append(note);
+  if(driving){renderCompactFuel();return;}
+  const note=document.createElement('small');note.textContent='TEST 0.26 • '+source+' • '+stations.length+' stacji do 500 m od trasy • '+(partial?'część odcinków nie została sprawdzona':'lista może być niepełna')+' • dojazd niezweryfikowany';$('fuelitems').append(note);
  }catch(e){fuelInfo('Nie udało się pobrać stacji: '+(e.name==='AbortError'?'przekroczono czas':e.message||'błąd')+'. Spróbuj później.');}
+}
+// 0.26: w czasie jazdy tylko trzy najbliższe, jeszcze nieminięte stacje.
+function renderCompactFuel(){
+ if(!driving||!activeTrip)return;
+ const now=fuelProgress();
+ const next=fuelCandidates.map(st=>({...st,remaining:st.ahead-(now-fuelListOrigin)}))
+  .filter(st=>st.remaining>=-100).sort((a,b)=>a.remaining-b.remaining).slice(0,3);
+ const target=$('fuelitems');target.replaceChildren();
+ if(!next.length){target.textContent='Brak kolejnych stacji w pobranych danych';return;}
+ for(const st of next){
+  const btn=document.createElement('button');btn.type='button';btn.className='compactFuel';
+  const km=(Math.max(0,st.remaining)/1000).toFixed(1).replace('.',',');
+  btn.textContent=st.name+' · '+km+' km';btn.title='Dodaj '+st.name+' jako przystanek';
+  btn.onclick=()=>addFuelStop(st);target.append(btn);
+ }
 }
 // 0.22: punkt pośredni stacji — dwa odcinki, bez zmiany pierwotnego celu.
 async function addFuelStop(st){
@@ -590,7 +623,7 @@ activeTrip={points:pts,segments,geometryLength:segments.reduce((a,b)=>a+b,0),dis
  }
  activeTrip.maneuvers.sort((a,b)=>a.progress-b.progress);
  updateManeuver();
-$('tripbar').classList.add('active');$('drive').style.display='block';updateTrip();loadFuel();
+$('tripbar').classList.add('active');$('drive').style.display='block';updateTrip();fuelCandidates=[];$('fuelbox').classList.remove('active');
 lastRouteMode=mode;selectedFuelStop=stop;
 let km=(t.distance/1000).toFixed(1),min=Math.round(t.duration/60);
 $('result').textContent=`${km} km • ${Math.floor(min/60)} h ${min%60} min`;
@@ -749,7 +782,7 @@ function updateGps(p){
  $('speedvalue').textContent=Number.isFinite(speed)&&speed>=0
    ? String(Math.round(speed*3.6)) : '—';
  $('gpsstate').textContent='GPS aktywny • dokładność '+Math.round(c.accuracy||0)+' m';
- if(activeTrip){checkOffRoute(c.accuracy);if(driving&&offRouteConfirmed&&!autoRerouteBusy)void autoReroute();updateTrip();if(driving&&Number.isFinite(c.accuracy)&&c.accuracy<=35&&!offRouteConfirmed)updateManeuver();}
+ if(activeTrip){if(driving&&fuelCandidates.length)renderCompactFuel();checkOffRoute(c.accuracy);if(driving&&offRouteConfirmed&&!autoRerouteBusy)void autoReroute();updateTrip();if(driving&&Number.isFinite(c.accuracy)&&c.accuracy<=35&&!offRouteConfirmed)updateManeuver();}
  if(driving)refreshSpeedLimit(gpsPoint,c.accuracy);
  updateBearing(c);
  if(driving&&followGps)map.panTo(gpsPoint,{animate:true,duration:.3});
