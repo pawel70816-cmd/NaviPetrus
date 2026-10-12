@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#102236"><title>NaviPetrus 0.9</title>
+<meta name="theme-color" content="#102236"><title>NaviPetrus 0.8</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#102236;color:#fff}
@@ -33,15 +33,9 @@ body.driving #speedbar{margin-bottom:5px;padding-bottom:5px}
 body.driving #tripbar{margin:5px 0 0;padding:6px 0 0;border-top:0;border-bottom:0;gap:5px}
 body.driving #tripbar .tripitem b{font-size:17px}
 body.driving #speedvalue{font-size:26px}
-#limitbadge{display:flex;align-items:center;gap:7px;margin-left:auto;margin-right:8px}
-#limitbadge small{font-size:10px;color:#b6c8d8;max-width:72px;line-height:1.1}
-#limitSign{width:42px;height:42px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:white;color:#101010;border:5px solid #d52929;font-weight:850;font-size:16px;box-sizing:border-box}
-#limitSign.unknown{color:#777;border-color:#999}
-#gpsstate{max-width:33%}
-body.driving #limitbadge{display:flex}
 </style></head><body><div id="map"></div>
 <div class="panel">
-<h1>🚗 NaviPetrus <small>PROTOTYP 0.9 • TEST</small></h1>
+<h1>🚗 NaviPetrus <small>PROTOTYP 0.8 • TEST</small></h1>
 <div class="fields">
 <input id="start" placeholder="Start: adres lub współrzędne" value="Poznań, Polska">
 <button class="secondary" id="gps" title="Ustaw start z GPS">📍 GPS</button>
@@ -50,14 +44,14 @@ body.driving #limitbadge{display:flex}
 </div>
 
 <div class="actions"><button id="route">Wyznacz trasę</button><button id="drive" style="display:none">▶ START</button><button class="secondary" id="clear">Wyczyść</button><button class="dark" id="toggle">Pomoc</button></div>
-<div id="help">Wpisz adresy lub współrzędne „szerokość, długość”. Możesz też przytrzymać mapę, aby ustawić cel. GPS wymaga zgody i HTTPS. Po naciśnięciu GPS rozpoczyna się śledzenie pozycji i prędkości. Po wybraniu „Wyznacz trasę” wybierz „Płatne” lub „Omijaj płatne”. Po obliczeniu trasy użyj START, aby schować panel i śledzić pozycję na mapie. Znak LIMIT OSM pokazuje tylko dostępne, orientacyjne dane OpenStreetMap; znak drogowy ma pierwszeństwo. Przycisk Menu ponownie otwiera panel. Gdy pomiar prędkości jest niedostępny, widoczne są kreski. iOS może wstrzymać GPS po wygaszeniu ekranu lub przejściu do innej aplikacji. Po wyznaczeniu trasy i uruchomieniu GPS dolny panel pokazuje szacunkowe pozostałe kilometry, czas i godzinę przyjazdu. Wartości są obliczane z postępu na zaplanowanej trasie, bez korków. Przy zjechaniu z trasy trzeba ją przeliczyć. Po zmianie startu przelicz trasę. Stacje paliw są pobierane z OpenStreetMap. Pokazujemy maksymalnie trzy punkty do 3 km w linii prostej od trasy; dostępność zjazdu, kierunek dojazdu, rzeczywista długość objazdu i otwarcie stacji NIE są jeszcze sprawdzane. Nie wybieraj zjazdu bez sprawdzenia znaków i bezpiecznej trasy. To wersja do testów, nie do prowadzenia podczas jazdy. Tryb „Płatne” używa OSRM i nie filtruje dróg płatnych. Tryb „Omijaj płatne” próbuje wyznaczyć trasę przez usługę Valhalla z opcją exclude_tolls; nie gwarantuje uniknięcia każdej opłaty ani uwzględnienia aktualnych przepisów. Jeżeli usługa jest niedostępna, aplikacja zgłosi błąd zamiast po cichu wyznaczać trasę płatną. Zawsze sprawdź znaki i opłaty. Trasy nie uwzględniają korków.</div>
+<div id="help">Wpisz adresy lub współrzędne „szerokość, długość”. Możesz też przytrzymać mapę, aby ustawić cel. GPS wymaga zgody i HTTPS. Po naciśnięciu GPS rozpoczyna się śledzenie pozycji i prędkości. Po wybraniu „Wyznacz trasę” wybierz „Płatne” lub „Omijaj płatne”. Po obliczeniu trasy użyj START, aby schować panel i śledzić pozycję na mapie. Przycisk Menu ponownie otwiera panel. Gdy pomiar prędkości jest niedostępny, widoczne są kreski. iOS może wstrzymać GPS po wygaszeniu ekranu lub przejściu do innej aplikacji. Po wyznaczeniu trasy i uruchomieniu GPS dolny panel pokazuje szacunkowe pozostałe kilometry, czas i godzinę przyjazdu. Wartości są obliczane z postępu na zaplanowanej trasie, bez korków. Przy zjechaniu z trasy trzeba ją przeliczyć. Po zmianie startu przelicz trasę. Stacje paliw są pobierane z OpenStreetMap. Pokazujemy maksymalnie trzy punkty do 3 km w linii prostej od trasy; dostępność zjazdu, kierunek dojazdu, rzeczywista długość objazdu i otwarcie stacji NIE są jeszcze sprawdzane. Nie wybieraj zjazdu bez sprawdzenia znaków i bezpiecznej trasy. To wersja do testów, nie do prowadzenia podczas jazdy. Tryb „Płatne” używa OSRM i nie filtruje dróg płatnych. Tryb „Omijaj płatne” próbuje wyznaczyć trasę przez usługę Valhalla z opcją exclude_tolls; nie gwarantuje uniknięcia każdej opłaty ani uwzględnienia aktualnych przepisów. Jeżeli usługa jest niedostępna, aplikacja zgłosi błąd zamiast po cichu wyznaczać trasę płatną. Zawsze sprawdź znaki i opłaty. Trasy nie uwzględniają korków.</div>
 </div>
 <button id="showpanel" class="secondary" aria-label="Otwórz panel" style="display:none">☰ Menu</button>
 <div id="routeDialog" class="modal" style="display:none" role="dialog" aria-modal="true" aria-label="Wybierz trasę">
  <div class="modalcard"><h2>Wybierz trasę</h2><button id="paid">Płatne</button><button id="free" class="secondary">Omijaj płatne</button><button id="cancelMode" class="dark">Anuluj</button></div>
 </div>
 <div id="fuelbox"><strong>⛽ Stacje po drodze</strong><div id="fuelitems">Szukam stacji…</div><button class="secondary" id="fuelrefresh">Odśwież</button></div>
-<div class="bottom"><div id="speedbar"><div><span id="speedvalue">—</span> <span id="speedunit">km/h</span></div><div id="limitbadge"><small>LIMIT OSM<br>orientacyjny</small><span id="limitSign" class="unknown">?</span></div><div id="gpsstate">GPS nieuruchomiony</div></div><div id="tripbar"><div class="tripitem"><small>DO CELU</small><b id="remainkm">—</b></div><div class="tripitem"><small>POZOSTAŁO</small><b id="remaintime">—</b></div><div class="tripitem"><small>PRZYJAZD</small><b id="arrival">—</b></div></div><div id="result">Gotowe do wyznaczenia trasy</div><div id="status">Mapa i trasy wymagają internetu.</div><div id="saved"></div></div>
+<div class="bottom"><div id="speedbar"><div><span id="speedvalue">—</span> <span id="speedunit">km/h</span></div><div id="gpsstate">GPS nieuruchomiony</div></div><div id="tripbar"><div class="tripitem"><small>DO CELU</small><b id="remainkm">—</b></div><div class="tripitem"><small>POZOSTAŁO</small><b id="remaintime">—</b></div><div class="tripitem"><small>PRZYJAZD</small><b id="arrival">—</b></div></div><div id="result">Gotowe do wyznaczenia trasy</div><div id="status">Mapa i trasy wymagają internetu.</div><div id="saved"></div></div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 const $=id=>document.getElementById(id);
@@ -78,7 +72,7 @@ $('showpanel').onclick=()=>setDriving(false);
 $('drive').onclick=()=>{
  if(!activeTrip)return status('Najpierw wyznacz trasę.');
  if(!gpsPoint){status('Włącz GPS, aby rozpocząć jazdę.');$('gps').click();return;}
- setDriving(true);map.setView(gpsPoint,Math.max(map.getZoom(),15));refreshSpeedLimit(gpsPoint,20);
+ setDriving(true);map.setView(gpsPoint,Math.max(map.getZoom(),15));
  status('Tryb jazdy. GPS śledzi pozycję tylko przy aktywnej stronie.');
 };
 $('route').onclick=()=>{$('routeDialog').style.display='flex'};
@@ -250,59 +244,6 @@ let km=(t.distance/1000).toFixed(1),min=Math.round(t.duration/60);
 $('result').textContent=`${km} km • ${Math.floor(min/60)} h ${min%60} min`;
 status(mode==='noTolls'?'Trasa z próbą ominięcia opłat (Valhalla). Brak gwarancji bezpłatności. Bez korków.':'Szacunkowy czas bez aktualnych korków. Trasa może zawierać płatne odcinki.');
 }catch(e){if(request===routeRequest)status('Błąd: '+e.message)}finally{if(request===routeRequest)$('route').disabled=false}}
-// 0.9: orientacyjny limit z jawnego maxspeed w OpenStreetMap.
-// Brak danych, niepewna droga lub błąd usługi => znak '?' (nigdy nie zgadujemy).
-let limitLastPoint=null,limitLastTime=0,limitSequence=0;
-function displayLimit(value){
- const sign=$('limitSign');sign.textContent=value??'?';
- sign.classList.toggle('unknown',value===null);
-}
-function parseMaxspeed(raw){
- if(!raw||typeof raw!=='string')return null;
- const value=raw.trim().toLowerCase();
- if(/^\\d{1,3}$/.test(value))return Number(value);
- const match=value.match(/^(\\d{1,3})\\s*(?:km\\/h|kph)$/);
- if(match)return Number(match[1]);
- const mph=value.match(/^(\\d{1,3})\\s*mph$/);
- if(mph)return Math.round(Number(mph[1])*1.609344);
- return null; // np. PL:urban, conditional, variable, none, signals
-}
-function segmentDistance(pos,points){
- let best=Infinity;
- const latFactor=111195,lonFactor=111195*Math.cos(rad(pos[0]));
- for(let i=1;i<points.length;i++){
-  const a=points[i-1],b=points[i],dx=(b[1]-a[1])*lonFactor,dy=(b[0]-a[0])*latFactor;
-  const px=(pos[1]-a[1])*lonFactor,py=(pos[0]-a[0])*latFactor;
-  const t=Math.max(0,Math.min(1,(px*dx+py*dy)/(dx*dx+dy*dy||1)));
-  best=Math.min(best,Math.hypot(px-t*dx,py-t*dy));
- }
- return best;
-}
-async function refreshSpeedLimit(pos,accuracy){
- if(!Number.isFinite(accuracy)||accuracy>35){displayLimit(null);return}
- const now=Date.now();
- if(limitLastPoint&&meters(pos,limitLastPoint)<100&&now-limitLastTime<45000)return;
- limitLastPoint=[...pos];limitLastTime=now;
- const seq=++limitSequence;
- displayLimit(null);
- const query=`[out:json][timeout:12];way(around:55,${pos[0]},${pos[1]})["highway"]["maxspeed"];out geom;`;
- const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),12000);
- try{
-  const response=await fetch('https://overpass.kumi.systems/api/interpreter',{method:'POST',body:query,signal:ctrl.signal});
-  if(!response.ok)throw Error('Overpass');
-  const data=await response.json();
-  if(seq!==limitSequence)return;
-  const candidates=(data.elements||[]).filter(e=>e.type==='way'&&Array.isArray(e.geometry)&&e.geometry.length>1).map(e=>({
-   speed:parseMaxspeed(e.tags?.maxspeed),
-   distance:segmentDistance(pos,e.geometry.map(p=>[p.lat,p.lon]))
-  })).filter(e=>e.speed!==null&&e.distance<=Math.max(15,accuracy+8)).sort((a,b)=>a.distance-b.distance);
-  // Bliskie równoległe jezdnie z różnymi limitami: nie pokazuj niepewnej wartości.
-  const best=candidates[0];
-  if(best&&candidates.some(c=>c.distance-best.distance<12&&c.speed!==best.speed))displayLimit(null);
-  else displayLimit(best?best.speed:null);
- }catch(e){if(seq===limitSequence)displayLimit(null)}
- finally{clearTimeout(timer)}
-}
 // watchPosition działa tylko podczas dostępności lokalizacji dla strony.
 function updateGps(p){
  const c=p.coords;
@@ -326,7 +267,6 @@ function updateGps(p){
    ? String(Math.round(speed*3.6)) : '—';
  $('gpsstate').textContent='GPS aktywny • dokładność '+Math.round(c.accuracy||0)+' m';
  if(activeTrip)updateTrip();
- if(driving)refreshSpeedLimit(gpsPoint,c.accuracy);
  if(driving)map.panTo(gpsPoint,{animate:true,duration:.3});
  if(firstFix)status('Śledzenie GPS aktywne. Naciśnij „Wyznacz trasę”, aby obliczyć trasę.');
 }
@@ -355,7 +295,7 @@ setInterval(()=>{
    $('gpsstate').textContent='GPS: oczekiwanie na nowy pomiar';
  }
 },3000);
-$('clear').onclick=()=>{setDriving(false);displayLimit(null);$('drive').style.display='none';routeRequest++;clean();clearTrip();$('route').disabled=false;$('result').textContent='Gotowe do wyznaczenia trasy';status('Trasa wyczyszczona. Znacznik GPS pozostaje na mapie.')};
+$('clear').onclick=()=>{setDriving(false);$('drive').style.display='none';routeRequest++;clean();clearTrip();$('route').disabled=false;$('result').textContent='Gotowe do wyznaczenia trasy';status('Trasa wyczyszczona. Znacznik GPS pozostaje na mapie.')};
 
 $('toggle').onclick=()=>$('help').style.display=$('help').style.display==='block'?'none':'block';
 function saved(){let a=JSON.parse(localStorage.getItem('navipetrus_places')||'[]');$('saved').replaceChildren();if(a.length){let t=document.createElement('span');t.textContent='Zapisane cele: ';$('saved').append(t)}a.forEach((x,i)=>{let b=document.createElement('button');b.textContent=x.name;b.onclick=()=>{$('end').value=x.address;status('Wybrano zapisany cel.')};$('saved').append(b)})}
