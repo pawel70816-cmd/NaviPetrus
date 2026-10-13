@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#102236"><title>NaviPetrus 0.40</title>
+<meta name="theme-color" content="#102236"><title>NaviPetrus 0.41</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#102236;color:#fff}
@@ -298,11 +298,11 @@ body.previewing .panel,body.previewing .bottom,body.previewing #themebtn,body.pr
 #placeCancel{min-height:45px;background:#38536d;color:#fff;border:0;border-radius:10px}
 </style></head><body><div id="map"></div><button id="themebtn" type="button" aria-label="Zmień motyw mapy">☾ NOC</button><button id="routeview" type="button" title="Pokaż pozostałą trasę" aria-label="Pokaż całą pozostałą trasę" aria-pressed="false">⇄</button><button id="recenter" type="button" title="Wyśrodkuj na GPS i włącz śledzenie" aria-label="Wróć do mojej pozycji GPS">◎</button>
 <div class="panel">
-<h1>🚗 NaviPetrus <small>PROTOTYP 0.40 • TEST</small></h1>
+<h1>🚗 NaviPetrus <small>PROTOTYP 0.41 • TEST</small></h1>
 <div class="fields">
 <input id="start" placeholder="Start: adres lub współrzędne" value="Moja pozycja GPS">
 <button class="secondary" id="gps" title="Ustaw start z GPS">📍 GPS</button>
-<input id="end" placeholder="Cel: adres lub współrzędne" value="52.31972, 14.55193">
+<input id="end" placeholder="Wpisz cel podróży" value="" autocomplete="off" autocorrect="off">
 <button class="secondary" id="save" title="Otwórz ulubione miejsca">★ Ulubione</button>
 </div>
 
@@ -1374,6 +1374,13 @@ function showMapPick(latlng){
 map.on('click',e=>showMapPick(e.latlng));
 map.on('contextmenu',e=>showMapPick(e.latlng));
 // 0.29.3: usunięto błędne wywołanie nieistniejącej funkcji saved(), które zatrzymywało inicjalizację GPS.
+// 0.41: po odświeżeniu cel pozostaje pusty (także gdy Safari przywraca pola formularza).
+// Wybranie ulubionego lub punktu na mapie nadal ustawia cel normalnie.
+window.addEventListener('pageshow',event=>{
+ if(event.persisted)return; // powrót z historii: nie niszcz świadomie wybranego celu
+ if(!$('end').dataset.userEdited){$('end').value='';pinnedDestination=null;}
+});
+$('end').addEventListener('input',()=>{$('end').dataset.userEdited='1';});
 // 0.29.3: start dopiero po pełnym przygotowaniu strony; pojedyncze żądanie.
 function autoStartGps(){
  if(gpsPoint||gpsWatch!==null)return;
