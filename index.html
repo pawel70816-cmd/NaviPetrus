@@ -313,7 +313,8 @@ body.driving #nextturn #afterlabel{font-size:10px;font-weight:800;letter-spacing
 body.driving #nextturn #afterdistance{font-size:11px;color:#d7e8f5}
 body.driving #nextturn{min-height:68px;align-items:center}
 </style></head><body><div id="map"></div><button id="themebtn" type="button" aria-label="Zmień motyw mapy">☾ NOC</button><button id="routeview" type="button" title="Pokaż pozostałą trasę" aria-label="Pokaż całą pozostałą trasę" aria-pressed="false">⇄</button><button id="recenter" type="button" title="Wyśrodkuj na GPS i włącz śledzenie" aria-label="Wróć do mojej pozycji GPS">◎</button>
-<div id="cameraWarning" role="status" aria-live="polite"></div>\n<button id="camerabtn" type="button" title="Pokaż fotoradary w okolicy GPS">📷 Radary</button>
+<div id="cameraWarning" role="status" aria-live="polite"></div>
+<button id="camerabtn" type="button" title="Pokaż fotoradary w okolicy GPS">📷 Radary</button>
 <div class="panel">
 <h1>🚗 NaviPetrus <small>PROTOTYP 0.48 • TEST</small></h1>
 <div class="fields">
@@ -397,7 +398,8 @@ $('camerabtn').onclick=async()=>{
    if(!response.ok)throw Error('brak cameras.json (HTTP '+response.status+')');
    const result=await response.json();
    if(result.country!=='PL'||!Array.isArray(result.cameras))throw Error('nieprawidłowa baza radarów');
-   cameraDatabase=result;\n   updateCameraWarning();
+   cameraDatabase=result;
+   updateCameraWarning();
   }
   cameraLayer.clearLayers();
   const [lat,lon]=gpsPoint;let count=0;
@@ -1349,7 +1351,8 @@ function updateGps(p){
    ? String(Math.round(speed*3.6)) : '—';
  $('gpsstate').textContent='GPS aktywny • dokładność '+Math.round(c.accuracy||0)+' m';
  if(activeTrip){if(driving&&fuelCandidates.length)renderCompactFuel();checkOffRoute(c.accuracy);if(driving&&offRouteConfirmed&&!autoRerouteBusy)void autoReroute();updateTrip();if(driving&&Number.isFinite(c.accuracy)&&c.accuracy<=35&&!offRouteConfirmed)updateManeuver();}
- if(driving)refreshSpeedLimit(gpsPoint,c.accuracy);\n updateCameraWarning();
+ if(driving)refreshSpeedLimit(gpsPoint,c.accuracy);
+ updateCameraWarning();
  updateBearing(c);
  if(driving)followGpsCamera();
  if(firstFix)status('Śledzenie GPS aktywne. Naciśnij „Wyznacz trasę”, aby obliczyć trasę.');
