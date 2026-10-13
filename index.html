@@ -245,9 +245,13 @@ body.driving #fuelbox{right:8px!important;top:calc(132px + env(safe-area-inset-t
 .map-pick-actions button{font-size:15px!important;min-height:39px;padding:8px!important;border-radius:9px;white-space:normal}
 .leaflet-popup-content{margin:12px!important}
 #gps-waiting{position:fixed;z-index:1000;top:50%;left:50%;transform:translate(-50%,-50%);width:min(90vw,380px);box-sizing:border-box;padding:18px 16px;border-radius:15px;background:#172c40;color:#fff;font-weight:700;text-align:center;box-shadow:0 5px 24px #0006;pointer-events:none}
-</style></head><body><div id="map"></div><button id="themebtn" type="button" aria-label="Zmień motyw mapy">☾ NOC</button><button id="recenter" type="button" title="Wyśrodkuj na GPS i włącz śledzenie" aria-label="Wróć do mojej pozycji GPS">◎</button>
+/* 0.30: przelaczanie pomiedzy widokiem jazdy a pozostala trasa */
+#routeview{display:none;position:absolute;z-index:535;right:10px;bottom:calc(177px + env(safe-area-inset-bottom,0px));width:48px;height:48px;border-radius:50%;padding:0;background:#eaf3fa;color:#17364e;font-size:24px;box-shadow:0 3px 12px #0008;touch-action:manipulation}
+body.driving #routeview{display:block}
+#routeview.overview{background:#29c2aa;color:#06211e}
+</style></head><body><div id="map"></div><button id="themebtn" type="button" aria-label="Zmień motyw mapy">☾ NOC</button><button id="routeview" type="button" title="Pokaż pozostałą trasę" aria-label="Pokaż całą pozostałą trasę" aria-pressed="false">⇄</button><button id="recenter" type="button" title="Wyśrodkuj na GPS i włącz śledzenie" aria-label="Wróć do mojej pozycji GPS">◎</button>
 <div class="panel">
-<h1>🚗 NaviPetrus <small>PROTOTYP 0.29.3 • TEST</small></h1>
+<h1>🚗 NaviPetrus <small>PROTOTYP 0.30 • TEST</small></h1>
 <div class="fields">
 <input id="start" placeholder="Start: adres lub współrzędne" value="Moja pozycja GPS">
 <button class="secondary" id="gps" title="Ustaw start z GPS">📍 GPS</button>
@@ -256,7 +260,7 @@ body.driving #fuelbox{right:8px!important;top:calc(132px + env(safe-area-inset-t
 </div>
 
 <div class="actions"><button id="route">Wyznacz trasę</button><button id="drive" style="display:none">▶ START</button><button class="secondary" id="clear">Wyczyść</button><button class="dark" id="toggle">Pomoc</button><button id="diagbtn" type="button">Diagnostyka</button><button id="voicebtn" type="button" title="Włącz lub wyłącz komunikaty głosowe">🔇 Głos</button></div>
-<div id="help">Przycisk Diagnostyka pokazuje aktualność GPS, dokładność, kierunek, prędkość i odchylenie od trasy. Przycisk DZIEŃ/NOC zmienia ręcznie jasność i kolory kafelków mapy (motyw jest zapamiętywany w przeglądarce). Wpisz nazwy miejsc lub adresy: pozostają widoczne po wyznaczeniu trasy. Przycisk ★ Ulubione otwiera listę zapisanych celów z opcjami Nawiguj, Usuń i Dodaj obecny cel. W 0.27.2 wybierz znaleziony adres z listy przed trasą lub zapisem ulubionego. Przycisk Głos włącza próbne komunikaty po polsku podczas jazdy. W 0.27.1 dodawanie ulubionego wymaga osobnego podania wyszukiwanego miejsca i etykiety oraz potwierdzenia wyniku; starsze wpisy wymagają ponownego potwierdzenia lokalizacji. Po uruchomieniu GPS pole startu pokazuje „Moja pozycja GPS”, a aktualne współrzędne pozostają wewnętrznymi danymi nawigacji. Możesz też podać współrzędne „szerokość, długość”. Możesz też przytrzymać mapę, aby ustawić cel. GPS wymaga zgody i HTTPS. Po naciśnięciu GPS rozpoczyna się śledzenie pozycji i prędkości. W trybie START prędkość i znak są u góry, a na dole godzina przyjazdu, czas i dystans. W 0.27.4 mapa pozostaje północą do góry, ponieważ eksperymentalny obrót powodował ucinanie ekranu na iPhonie. Pasek manewru pokazuje orientacyjną odległość i kierunek kolejnego skrętu oraz podgląd następnego manewru („POTEM”), gdy dane są dostępne na podstawie danych trasowania; nie zastępuje znaków drogowych. Bez aktualnego GPS manewr nie jest śledzony. Po wybraniu „Wyznacz trasę” wybierz „Płatne” lub „Omijaj płatne”. Jeśli serwer zwróci więcej wariantów, pojawią się przyciski wyboru trasy i jasne linie alternatywne. Nie zawsze dostępne są dwie lub trzy trasy. Po obliczeniu trasy użyj START, aby schować panel i śledzić pozycję na mapie. Znak przy przycisku Menu pokazuje tylko dostępne, orientacyjne dane OpenStreetMap; znak drogowy ma pierwszeństwo. Przycisk Menu ponownie otwiera panel. Gdy pomiar prędkości jest niedostępny, widoczne są kreski. iOS może wstrzymać GPS po wygaszeniu ekranu lub przejściu do innej aplikacji. Po wyznaczeniu trasy i uruchomieniu GPS dolny panel pokazuje szacunkowe pozostałe kilometry, czas i godzinę przyjazdu. Wartości są obliczane z postępu na zaplanowanej trasie, bez korków. W wersji 0.25 po trzech wiarygodnych pomiarach GPS poza trasą nawigacja próbuje automatycznie przeliczyć dojazd z zachowaniem celu i wybranego trybu opłat. Ponowne próby są ograniczone do jednej na 45 sekund; brak internetu może uniemożliwić przeliczenie. Po zmianie startu przelicz trasę. Stacje paliw są testowo wyszukiwane przez Nominatim (OpenStreetMap); wyniki mogą być niekompletne. W wersji 0.21.10 Blisko szuka do 5 km od GPS, a Szukaj dalej sprawdza odcinki trasy przez kilka serwerów Overpass. Przy całkowitej awarii używa ograniczonego wyszukiwania awaryjnego Nominatim w okolicy celu; nie jest to pełna lista stacji na trasie. W razie błędu wyniki mogą być niepełne. Oba tryby filtrują stacje do 500 m od trasy; dostępność zjazdu, kierunek dojazdu, rzeczywista długość objazdu i otwarcie stacji NIE są jeszcze sprawdzane. Nie wybieraj zjazdu bez sprawdzenia znaków i bezpiecznej trasy. To wersja do testów, nie do prowadzenia podczas jazdy. Tryb „Płatne” używa OSRM i nie filtruje dróg płatnych. Tryb „Omijaj płatne” próbuje wyznaczyć trasę przez usługę Valhalla z opcją exclude_tolls; nie gwarantuje uniknięcia każdej opłaty ani uwzględnienia aktualnych przepisów. Jeżeli usługa jest niedostępna, aplikacja zgłosi błąd zamiast po cichu wyznaczać trasę płatną. Zawsze sprawdź znaki i opłaty. Trasy nie uwzględniają korków.</div>
+<div id="help">Przycisk Diagnostyka pokazuje aktualność GPS, dokładność, kierunek, prędkość i odchylenie od trasy. Przycisk DZIEŃ/NOC zmienia ręcznie jasność i kolory kafelków mapy (motyw jest zapamiętywany w przeglądarce). Wpisz nazwy miejsc lub adresy: pozostają widoczne po wyznaczeniu trasy. Przycisk ★ Ulubione otwiera listę zapisanych celów z opcjami Nawiguj, Usuń i Dodaj obecny cel. W 0.27.2 wybierz znaleziony adres z listy przed trasą lub zapisem ulubionego. Przycisk Głos włącza próbne komunikaty po polsku podczas jazdy. W 0.27.1 dodawanie ulubionego wymaga osobnego podania wyszukiwanego miejsca i etykiety oraz potwierdzenia wyniku; starsze wpisy wymagają ponownego potwierdzenia lokalizacji. Po uruchomieniu GPS pole startu pokazuje „Moja pozycja GPS”, a aktualne współrzędne pozostają wewnętrznymi danymi nawigacji. Możesz też podać współrzędne „szerokość, długość”. Możesz też przytrzymać mapę, aby ustawić cel. GPS wymaga zgody i HTTPS. Po naciśnięciu GPS rozpoczyna się śledzenie pozycji i prędkości. W trybie START prędkość i znak są u góry, a na dole godzina przyjazdu, czas i dystans. W 0.27.4 mapa pozostaje północą do góry, ponieważ eksperymentalny obrót powodował ucinanie ekranu na iPhonie. Pasek manewru pokazuje orientacyjną odległość i kierunek kolejnego skrętu oraz podgląd następnego manewru („POTEM”), gdy dane są dostępne na podstawie danych trasowania; nie zastępuje znaków drogowych. Bez aktualnego GPS manewr nie jest śledzony. Po wybraniu „Wyznacz trasę” wybierz „Płatne” lub „Omijaj płatne”. W 0.30 przycisk ⇄ w trybie START pokazuje pozostałą trasę; ponowne dotknięcie przywraca widok jazdy. Jeśli serwer zwróci więcej wariantów, pojawią się przyciski wyboru trasy i jasne linie alternatywne. Nie zawsze dostępne są dwie lub trzy trasy. Po obliczeniu trasy użyj START, aby schować panel i śledzić pozycję na mapie. Znak przy przycisku Menu pokazuje tylko dostępne, orientacyjne dane OpenStreetMap; znak drogowy ma pierwszeństwo. Przycisk Menu ponownie otwiera panel. Gdy pomiar prędkości jest niedostępny, widoczne są kreski. iOS może wstrzymać GPS po wygaszeniu ekranu lub przejściu do innej aplikacji. Po wyznaczeniu trasy i uruchomieniu GPS dolny panel pokazuje szacunkowe pozostałe kilometry, czas i godzinę przyjazdu. Wartości są obliczane z postępu na zaplanowanej trasie, bez korków. W wersji 0.25 po trzech wiarygodnych pomiarach GPS poza trasą nawigacja próbuje automatycznie przeliczyć dojazd z zachowaniem celu i wybranego trybu opłat. Ponowne próby są ograniczone do jednej na 45 sekund; brak internetu może uniemożliwić przeliczenie. Po zmianie startu przelicz trasę. Stacje paliw są testowo wyszukiwane przez Nominatim (OpenStreetMap); wyniki mogą być niekompletne. W wersji 0.21.10 Blisko szuka do 5 km od GPS, a Szukaj dalej sprawdza odcinki trasy przez kilka serwerów Overpass. Przy całkowitej awarii używa ograniczonego wyszukiwania awaryjnego Nominatim w okolicy celu; nie jest to pełna lista stacji na trasie. W razie błędu wyniki mogą być niepełne. Oba tryby filtrują stacje do 500 m od trasy; dostępność zjazdu, kierunek dojazdu, rzeczywista długość objazdu i otwarcie stacji NIE są jeszcze sprawdzane. Nie wybieraj zjazdu bez sprawdzenia znaków i bezpiecznej trasy. To wersja do testów, nie do prowadzenia podczas jazdy. Tryb „Płatne” używa OSRM i nie filtruje dróg płatnych. Tryb „Omijaj płatne” próbuje wyznaczyć trasę przez usługę Valhalla z opcją exclude_tolls; nie gwarantuje uniknięcia każdej opłaty ani uwzględnienia aktualnych przepisów. Jeżeli usługa jest niedostępna, aplikacja zgłosi błąd zamiast po cichu wyznaczać trasę płatną. Zawsze sprawdź znaki i opłaty. Trasy nie uwzględniają korków.</div>
 </div>
 <button id="showpanel" class="secondary" aria-label="Otwórz panel" style="display:none">☰ Menu</button><div id="toplimit" aria-label="Orientacyjne ograniczenie prędkości OSM"><span id="limitSign" class="unknown">?</span><div id="topspeed"><strong id="topspeedvalue">—</strong><small>km/h</small></div></div>
 <div id="nextturn" aria-live="off"><span id="turnarrow">↑</span><div id="turndetails"><div id="turndistance">—</div><div id="turnstreet">Oczekiwanie na trasę</div></div><div id="afterturn"><span id="afterarrow">↑</span><div id="afterdetails"><div id="afterlabel">POTEM</div><div id="afterdistance">—</div><div id="afterstreet">—</div></div></div></div>
@@ -304,7 +308,7 @@ const gpsIcon=L.divIcon({className:'',html:'<div class="gps-dot"></div>',iconSiz
 const status=s=>$('status').textContent=s;
 const speedDisplay=new MutationObserver(()=>{$('topspeedvalue').textContent=$('speedvalue').textContent});
 speedDisplay.observe($('speedvalue'),{childList:true,characterData:true,subtree:true});
-let driving=false,followGps=true;
+let driving=false,followGps=true,routeOverview=false;
 let fuelCandidates=[],fuelListOrigin=0; // 0.26: mała lista trzech kolejnych stacji
 let offRouteHits=0,onRouteHits=0,offRouteConfirmed=false;
 // 0.25: automatyczne przeliczanie po potwierdzonym zjechaniu z trasy.
@@ -353,7 +357,7 @@ async function autoReroute(){
   // Zachowaj tryb jazdy; po przeliczeniu nie pokazuj całej trasy.
   installRoute(t,a,b,mode,stop,{keepView:true});
   resetOffRoute();autoRerouteFailures=0;
-  if(followGps)map.panTo(gpsPoint,{animate:false});
+  if(followGps&&!routeOverview)map.panTo(gpsPoint,{animate:false});
   updateManeuver();
   status('Trasa automatycznie przeliczona. Czas bez aktualnych korków.');
  }catch(e){
@@ -365,10 +369,42 @@ async function autoReroute(){
  }finally{autoRerouteBusy=false;}
 }
 
+function setRouteOverview(on){
+ if(!driving||!activeTrip){status('Najpierw uruchom prowadzenie po trasie.');return;}
+ if(on){
+  routeOverview=true;followGps=false;
+  $('recenter').classList.add('manual');
+  $('routeview').classList.add('overview');
+  $('routeview').textContent='⌖';
+  $('routeview').setAttribute('aria-pressed','true');
+  $('routeview').setAttribute('aria-label','Wróć do widoku jazdy');
+  const remaining=[...(gpsPoint?[gpsPoint]:[]),...activeTrip.points.slice(-1)];
+  // Wykorzystaj cala geometrię, lecz zacznij od pozycji najbliższej GPS.
+  let begin=0;
+  if(gpsPoint){let best=Infinity;for(let i=0;i<activeTrip.points.length;i++){
+   const d=meters(gpsPoint,activeTrip.points[i]);if(d<best){best=d;begin=i;}
+  }}
+  const pts=activeTrip.points.slice(begin);
+  const bounds=L.latLngBounds([...remaining,...pts]);
+  if(bounds.isValid())map.fitBounds(bounds,{paddingTopLeft:[30,155],paddingBottomRight:[30,145],maxZoom:15,animate:true});
+  status('Widok pozostałej trasy. Naciśnij przycisk ponownie, aby wrócić do jazdy.');
+ }else{
+  routeOverview=false;followGps=true;
+  $('recenter').classList.remove('manual');
+  $('routeview').classList.remove('overview');
+  $('routeview').textContent='⇄';
+  $('routeview').setAttribute('aria-pressed','false');
+  $('routeview').setAttribute('aria-label','Pokaż całą pozostałą trasę');
+  if(gpsPoint)map.setView(gpsPoint,Math.max(map.getZoom(),16),{animate:true});
+  status('Widok jazdy. Śledzenie GPS wznowione.');
+ }
+}
+$('routeview').onclick=()=>setRouteOverview(!routeOverview);
 map.on('dragstart',()=>{
  if(driving){followGps=false;$('recenter').classList.add('manual');}
 });
 $('recenter').onclick=()=>{
+ if(routeOverview){setRouteOverview(false);return;}
  if(!gpsPoint){status('Brak pozycji GPS.');return;}
  followGps=true;
  $('recenter').classList.remove('manual');
@@ -397,6 +433,11 @@ function updateBearing(coords){
 }
 function setDriving(on){
  driving=on;
+ routeOverview=false;
+ $('routeview').classList.remove('overview');
+ $('routeview').textContent='⇄';
+ $('routeview').setAttribute('aria-pressed','false');
+ $('routeview').setAttribute('aria-label','Pokaż całą pozostałą trasę');
  if(!on){autoRerouteBusy=false;}
  resetOffRoute();
  if(on){followGps=true;$('recenter').classList.remove('manual');}
@@ -958,7 +999,7 @@ function updateGps(p){
  if(activeTrip){if(driving&&fuelCandidates.length)renderCompactFuel();checkOffRoute(c.accuracy);if(driving&&offRouteConfirmed&&!autoRerouteBusy)void autoReroute();updateTrip();if(driving&&Number.isFinite(c.accuracy)&&c.accuracy<=35&&!offRouteConfirmed)updateManeuver();}
  if(driving)refreshSpeedLimit(gpsPoint,c.accuracy);
  updateBearing(c);
- if(driving&&followGps)map.panTo(gpsPoint,{animate:true,duration:.3});
+ if(driving&&followGps&&!routeOverview)map.panTo(gpsPoint,{animate:true,duration:.3});
  if(firstFix)status('Śledzenie GPS aktywne. Naciśnij „Wyznacz trasę”, aby obliczyć trasę.');
 }
 // 0.29.3: jedna ścieżka inicjalizacji GPS, bez równoległego getCurrentPosition.
