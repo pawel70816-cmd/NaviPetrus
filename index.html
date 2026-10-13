@@ -297,6 +297,9 @@ body.previewing .panel,body.previewing .bottom,body.previewing #themebtn,body.pr
 #placeList button:active{background:#27c3ae}
 #placeCancel{min-height:45px;background:#38536d;color:#fff;border:0;border-radius:10px}
 /* 0.45: oznaczenia fotoradarów nie wpływają na układ ekranu */
+
+#cameraWarning{position:absolute;z-index:810;left:12px;right:12px;top:calc(env(safe-area-inset-top,0px) + 58px);display:none;padding:12px 14px;border-radius:14px;background:#7d2708f2;color:#fff;box-shadow:0 5px 18px #0006;font-weight:750;font-size:15px;text-align:center;pointer-events:none}
+#cameraWarning.visible{display:block}
 #camerabtn{position:absolute;z-index:520;left:10px;top:calc(env(safe-area-inset-top,0px) + 88px);border:0;border-radius:10px;padding:8px 9px;background:#102236e8;color:white;font-size:12px;font-weight:700;box-shadow:0 2px 9px #0005}
 body:not(.driving) #camerabtn{top:calc(env(safe-area-inset-top,0px) + 210px)}
 body.previewing #camerabtn{display:none}
@@ -310,9 +313,9 @@ body.driving #nextturn #afterlabel{font-size:10px;font-weight:800;letter-spacing
 body.driving #nextturn #afterdistance{font-size:11px;color:#d7e8f5}
 body.driving #nextturn{min-height:68px;align-items:center}
 </style></head><body><div id="map"></div><button id="themebtn" type="button" aria-label="Zmień motyw mapy">☾ NOC</button><button id="routeview" type="button" title="Pokaż pozostałą trasę" aria-label="Pokaż całą pozostałą trasę" aria-pressed="false">⇄</button><button id="recenter" type="button" title="Wyśrodkuj na GPS i włącz śledzenie" aria-label="Wróć do mojej pozycji GPS">◎</button>
-<button id="camerabtn" type="button" title="Pokaż fotoradary w okolicy GPS">📷 Radary</button>
+<div id="cameraWarning" role="status" aria-live="polite"></div>\n<button id="camerabtn" type="button" title="Pokaż fotoradary w okolicy GPS">📷 Radary</button>
 <div class="panel">
-<h1>🚗 NaviPetrus <small>PROTOTYP 0.47.3 • TEST</small></h1>
+<h1>🚗 NaviPetrus <small>PROTOTYP 0.48 • TEST</small></h1>
 <div class="fields">
 <input id="start" placeholder="Start: adres lub współrzędne" value="Moja pozycja GPS">
 <button class="secondary" id="gps" title="Ustaw start z GPS">📍 GPS</button>
@@ -321,7 +324,7 @@ body.driving #nextturn{min-height:68px;align-items:center}
 </div>
 
 <div class="actions"><button id="route">Wyznacz trasę</button><button id="drive" style="display:none">▶ START</button><button class="secondary" id="clear">Wyczyść</button><button class="dark" id="toggle">Pomoc</button><button id="diagbtn" type="button">Diagnostyka</button><button id="voicebtn" type="button" title="Włącz lub wyłącz komunikaty głosowe">🔇 Głos</button></div>
-<div id="help">Przycisk Diagnostyka pokazuje aktualność GPS, dokładność, kierunek, prędkość i odchylenie od trasy. Przycisk DZIEŃ/NOC zmienia ręcznie jasność i kolory kafelków mapy (motyw jest zapamiętywany w przeglądarce). Wpisz nazwy miejsc lub adresy: pozostają widoczne po wyznaczeniu trasy. Przycisk ★ Ulubione otwiera listę zapisanych celów z opcjami Nawiguj, Usuń i Dodaj obecny cel. W 0.47.3 przycisk 📷 Radary pokazuje urządzenia z lokalnego pliku cameras.json (baza Tachwire/CANARD/OSM) w promieniu 8 km od GPS, bez zapytań Overpass. Wymaga wgrania cameras.json obok index.html. Dane mogą być niepełne i nie zastępują znaków drogowych. Źródło: https://tachwire.app/licenses; © OpenStreetMap contributors; ODbL 1.0. W 0.47.1 zapytanie radarów ograniczono do lekkiego wyszukiwania punktów w promieniu 8 km, aby zmniejszyć ryzyko przekroczenia czasu. W 0.47 wyszukiwanie radarów korzysta z kilku serwerów Overpass, gdy pierwszy nie odpowiada. W 0.46 zwiększono czytelność nazw ulic i podglądu następnego manewru w trybie START. W 0.45 przycisk 📷 Radary pobiera z OpenStreetMap punkty fotoradarów w okolicy GPS od aktualnego GPS. Dane mogą być niepełne; nie jest to jeszcze automatyczne ostrzeganie przed fotoradarami. W 0.44 głos podaje orientacyjną odległość do manewru zamiast stałych 200/700 metrów. W 0.43 mapa podczas jazdy ogranicza drgania i częstotliwość przesuwania przy słabym lub stojącym GPS. W 0.40 wyszukiwanie obejmuje również zagraniczne stacje i pozwala doprecyzować miejscowość przez podanie regionu (np. Grzmiąca 46, okolice Brodnicy). W 0.38 po wybraniu wyniku wyszukiwania mapa pokazuje jego położenie. Potwierdź „To mój cel” albo wybierz „Szukaj ponownie”. Przycisk Głos włącza próbne komunikaty po polsku podczas jazdy. W 0.27.1 dodawanie ulubionego wymaga osobnego podania wyszukiwanego miejsca i etykiety oraz potwierdzenia wyniku; starsze wpisy wymagają ponownego potwierdzenia lokalizacji. Po uruchomieniu GPS pole startu pokazuje „Moja pozycja GPS”, a aktualne współrzędne pozostają wewnętrznymi danymi nawigacji. Możesz też podać współrzędne „szerokość, długość”. Możesz też przytrzymać mapę, aby ustawić cel. GPS wymaga zgody i HTTPS. Po naciśnięciu GPS rozpoczyna się śledzenie pozycji i prędkości. W trybie START prędkość i znak są u góry, a na dole godzina przyjazdu, czas i dystans. W 0.27.4 mapa pozostaje północą do góry, ponieważ eksperymentalny obrót powodował ucinanie ekranu na iPhonie. Pasek manewru pokazuje orientacyjną odległość i kierunek kolejnego skrętu oraz podgląd następnego manewru („POTEM”), gdy dane są dostępne na podstawie danych trasowania; nie zastępuje znaków drogowych. Bez aktualnego GPS manewr nie jest śledzony. Po wybraniu „Wyznacz trasę” wybierz „Płatne” lub „Omijaj płatne”. W 0.33 panel pokazuje do trzech rzeczywistych wariantów zwróconych przez serwer, porównuje czas i kilometry. Jeśli serwer znajdzie mniej tras, pokazuje informację zamiast wymyślać trzecią. W 0.31 przycisk ⇄ w trybie START pokazuje pozostałą trasę; ponowne dotknięcie przywraca widok jazdy. Jeśli serwer zwróci więcej wariantów, pojawią się przyciski wyboru trasy i jasne linie alternatywne. Nie zawsze dostępne są dwie lub trzy trasy. Po obliczeniu trasy użyj START, aby schować panel i śledzić pozycję na mapie. Znak przy przycisku Menu pokazuje tylko dostępne, orientacyjne dane OpenStreetMap; znak drogowy ma pierwszeństwo. Przycisk Menu ponownie otwiera panel. Gdy pomiar prędkości jest niedostępny, widoczne są kreski. iOS może wstrzymać GPS po wygaszeniu ekranu lub przejściu do innej aplikacji. Po wyznaczeniu trasy i uruchomieniu GPS dolny panel pokazuje szacunkowe pozostałe kilometry, czas i godzinę przyjazdu. Wartości są obliczane z postępu na zaplanowanej trasie, bez korków. W wersji 0.33 po dwóch wiarygodnych pomiarach GPS wyraźnie poza trasą nawigacja próbuje automatycznie przeliczyć dojazd od bieżącej pozycji z zachowaniem celu i wybranego trybu opłat. Próby są ograniczane czasowo, a spóźniony wynik jest odrzucany, jeśli pojazd zdążył znacznie zmienić pozycję; brak internetu może uniemożliwić przeliczenie. Po zmianie startu przelicz trasę. Stacje paliw są testowo wyszukiwane przez Nominatim (OpenStreetMap); wyniki mogą być niekompletne. W wersji 0.21.10 Blisko szuka do 5 km od GPS, a Szukaj dalej sprawdza odcinki trasy przez kilka serwerów Overpass. Przy całkowitej awarii używa ograniczonego wyszukiwania awaryjnego Nominatim w okolicy celu; nie jest to pełna lista stacji na trasie. W razie błędu wyniki mogą być niepełne. Oba tryby filtrują stacje do 500 m od trasy; dostępność zjazdu, kierunek dojazdu, rzeczywista długość objazdu i otwarcie stacji NIE są jeszcze sprawdzane. Nie wybieraj zjazdu bez sprawdzenia znaków i bezpiecznej trasy. To wersja do testów, nie do prowadzenia podczas jazdy. Tryb „Płatne” używa OSRM i nie filtruje dróg płatnych. Tryb „Omijaj płatne” próbuje wyznaczyć trasę przez usługę Valhalla z opcją exclude_tolls; nie gwarantuje uniknięcia każdej opłaty ani uwzględnienia aktualnych przepisów. Jeżeli usługa jest niedostępna, aplikacja zgłosi błąd zamiast po cichu wyznaczać trasę płatną. Zawsze sprawdź znaki i opłaty. Trasy nie uwzględniają korków.</div>
+<div id="help">Przycisk Diagnostyka pokazuje aktualność GPS, dokładność, kierunek, prędkość i odchylenie od trasy. Przycisk DZIEŃ/NOC zmienia ręcznie jasność i kolory kafelków mapy (motyw jest zapamiętywany w przeglądarce). Wpisz nazwy miejsc lub adresy: pozostają widoczne po wyznaczeniu trasy. Przycisk ★ Ulubione otwiera listę zapisanych celów z opcjami Nawiguj, Usuń i Dodaj obecny cel. W 0.48 ostrzeżenia testowe pojawiają się przy aktywnej nawigacji i pewnym GPS (wymagane dane kierunku i prędkości), gdy urządzenie pasuje do trasy i kierunku. Włącz Głos, aby usłyszeć ostrzeżenia. Przy niepewności program milczy — brak ostrzeżenia nie oznacza braku kontroli. Przycisk 📷 Radary pokazuje urządzenia z lokalnego pliku cameras.json (baza Tachwire/CANARD/OSM) w promieniu 8 km od GPS, bez zapytań Overpass. Wymaga wgrania cameras.json obok index.html. Dane mogą być niepełne i nie zastępują znaków drogowych. Źródło: https://tachwire.app/licenses; © OpenStreetMap contributors; ODbL 1.0. W 0.47.1 zapytanie radarów ograniczono do lekkiego wyszukiwania punktów w promieniu 8 km, aby zmniejszyć ryzyko przekroczenia czasu. W 0.47 wyszukiwanie radarów korzysta z kilku serwerów Overpass, gdy pierwszy nie odpowiada. W 0.46 zwiększono czytelność nazw ulic i podglądu następnego manewru w trybie START. W 0.45 przycisk 📷 Radary pobiera z OpenStreetMap punkty fotoradarów w okolicy GPS od aktualnego GPS. Dane mogą być niepełne; nie jest to jeszcze automatyczne ostrzeganie przed fotoradarami. W 0.44 głos podaje orientacyjną odległość do manewru zamiast stałych 200/700 metrów. W 0.43 mapa podczas jazdy ogranicza drgania i częstotliwość przesuwania przy słabym lub stojącym GPS. W 0.40 wyszukiwanie obejmuje również zagraniczne stacje i pozwala doprecyzować miejscowość przez podanie regionu (np. Grzmiąca 46, okolice Brodnicy). W 0.38 po wybraniu wyniku wyszukiwania mapa pokazuje jego położenie. Potwierdź „To mój cel” albo wybierz „Szukaj ponownie”. Przycisk Głos włącza próbne komunikaty po polsku podczas jazdy. W 0.27.1 dodawanie ulubionego wymaga osobnego podania wyszukiwanego miejsca i etykiety oraz potwierdzenia wyniku; starsze wpisy wymagają ponownego potwierdzenia lokalizacji. Po uruchomieniu GPS pole startu pokazuje „Moja pozycja GPS”, a aktualne współrzędne pozostają wewnętrznymi danymi nawigacji. Możesz też podać współrzędne „szerokość, długość”. Możesz też przytrzymać mapę, aby ustawić cel. GPS wymaga zgody i HTTPS. Po naciśnięciu GPS rozpoczyna się śledzenie pozycji i prędkości. W trybie START prędkość i znak są u góry, a na dole godzina przyjazdu, czas i dystans. W 0.27.4 mapa pozostaje północą do góry, ponieważ eksperymentalny obrót powodował ucinanie ekranu na iPhonie. Pasek manewru pokazuje orientacyjną odległość i kierunek kolejnego skrętu oraz podgląd następnego manewru („POTEM”), gdy dane są dostępne na podstawie danych trasowania; nie zastępuje znaków drogowych. Bez aktualnego GPS manewr nie jest śledzony. Po wybraniu „Wyznacz trasę” wybierz „Płatne” lub „Omijaj płatne”. W 0.33 panel pokazuje do trzech rzeczywistych wariantów zwróconych przez serwer, porównuje czas i kilometry. Jeśli serwer znajdzie mniej tras, pokazuje informację zamiast wymyślać trzecią. W 0.31 przycisk ⇄ w trybie START pokazuje pozostałą trasę; ponowne dotknięcie przywraca widok jazdy. Jeśli serwer zwróci więcej wariantów, pojawią się przyciski wyboru trasy i jasne linie alternatywne. Nie zawsze dostępne są dwie lub trzy trasy. Po obliczeniu trasy użyj START, aby schować panel i śledzić pozycję na mapie. Znak przy przycisku Menu pokazuje tylko dostępne, orientacyjne dane OpenStreetMap; znak drogowy ma pierwszeństwo. Przycisk Menu ponownie otwiera panel. Gdy pomiar prędkości jest niedostępny, widoczne są kreski. iOS może wstrzymać GPS po wygaszeniu ekranu lub przejściu do innej aplikacji. Po wyznaczeniu trasy i uruchomieniu GPS dolny panel pokazuje szacunkowe pozostałe kilometry, czas i godzinę przyjazdu. Wartości są obliczane z postępu na zaplanowanej trasie, bez korków. W wersji 0.33 po dwóch wiarygodnych pomiarach GPS wyraźnie poza trasą nawigacja próbuje automatycznie przeliczyć dojazd od bieżącej pozycji z zachowaniem celu i wybranego trybu opłat. Próby są ograniczane czasowo, a spóźniony wynik jest odrzucany, jeśli pojazd zdążył znacznie zmienić pozycję; brak internetu może uniemożliwić przeliczenie. Po zmianie startu przelicz trasę. Stacje paliw są testowo wyszukiwane przez Nominatim (OpenStreetMap); wyniki mogą być niekompletne. W wersji 0.21.10 Blisko szuka do 5 km od GPS, a Szukaj dalej sprawdza odcinki trasy przez kilka serwerów Overpass. Przy całkowitej awarii używa ograniczonego wyszukiwania awaryjnego Nominatim w okolicy celu; nie jest to pełna lista stacji na trasie. W razie błędu wyniki mogą być niepełne. Oba tryby filtrują stacje do 500 m od trasy; dostępność zjazdu, kierunek dojazdu, rzeczywista długość objazdu i otwarcie stacji NIE są jeszcze sprawdzane. Nie wybieraj zjazdu bez sprawdzenia znaków i bezpiecznej trasy. To wersja do testów, nie do prowadzenia podczas jazdy. Tryb „Płatne” używa OSRM i nie filtruje dróg płatnych. Tryb „Omijaj płatne” próbuje wyznaczyć trasę przez usługę Valhalla z opcją exclude_tolls; nie gwarantuje uniknięcia każdej opłaty ani uwzględnienia aktualnych przepisów. Jeżeli usługa jest niedostępna, aplikacja zgłosi błąd zamiast po cichu wyznaczać trasę płatną. Zawsze sprawdź znaki i opłaty. Trasy nie uwzględniają korków.</div>
 </div>
 <button id="showpanel" class="secondary" aria-label="Otwórz panel" style="display:none">☰ Menu</button><div id="toplimit" aria-label="Orientacyjne ograniczenie prędkości OSM"><span id="limitSign" class="unknown">?</span><div id="topspeed"><strong id="topspeedvalue">—</strong><small>km/h</small></div></div>
 <div id="nextturn" aria-live="off"><span id="turnarrow">↑</span><div id="turndetails"><div id="turndistance">—</div><div id="turnstreet">Oczekiwanie na trasę</div></div><div id="afterturn"><span id="afterarrow">↑</span><div id="afterdetails"><div id="afterlabel">POTEM</div><div id="afterdistance">—</div><div id="afterstreet">—</div></div></div></div>
@@ -373,10 +376,10 @@ const cameraLayer=L.layerGroup().addTo(map);
 let cameraFetchBusy=false,cameraDatabase=null;
 const cameraLabels={
  speed:['Fotoradar stacjonarny','📷'],
- redlight:['Kontrola czerwonego światła','🚦'],
+ red_light:['Kontrola czerwonego światła','🚦'],
  section_start:['Początek odcinkowego pomiaru','🛣️'],
  section_end:['Koniec odcinkowego pomiaru','🛣️'],
- railway_redlight:['Kontrola czerwonego światła na przejeździe kolejowym','🚦']
+ level_crossing:['Kontrola czerwonego światła na przejeździe kolejowym','🚦']
 };
 function cameraDistanceKm(a,b,c,d){
  const rad=Math.PI/180,x=(c-a)*rad,y=(d-b)*rad;
@@ -394,7 +397,7 @@ $('camerabtn').onclick=async()=>{
    if(!response.ok)throw Error('brak cameras.json (HTTP '+response.status+')');
    const result=await response.json();
    if(result.country!=='PL'||!Array.isArray(result.cameras))throw Error('nieprawidłowa baza radarów');
-   cameraDatabase=result;
+   cameraDatabase=result;\n   updateCameraWarning();
   }
   cameraLayer.clearLayers();
   const [lat,lon]=gpsPoint;let count=0;
@@ -414,6 +417,63 @@ $('camerabtn').onclick=async()=>{
  finally{cameraFetchBusy=false;$('camerabtn').textContent='📷 Radary';}
 };
 
+// 0.48 — ostrzeżenia testowe wyłącznie na aktywnej trasie.
+// Brak pewnego dopasowania do drogi lub kierunku => brak ostrzeżenia.
+const cameraWarned=new Set();
+let cameraWarningLastId='',cameraWarningLastStage='',cameraWarningLastAt=0;
+function cameraRouteDirection(trip,progress){
+ let sum=0;
+ for(let i=1;i<trip.points.length;i++){
+  const len=trip.segments[i-1];
+  if(sum+len>=progress){
+   const a=trip.points[i-1],b=trip.points[i];
+   const y=Math.sin(rad(b[1]-a[1]))*Math.cos(rad(b[0]));
+   const x=Math.cos(rad(a[0]))*Math.sin(rad(b[0]))-Math.sin(rad(a[0]))*Math.cos(rad(b[0]))*Math.cos(rad(b[1]-a[1]));
+   return (Math.atan2(y,x)*180/Math.PI+360)%360;
+  }
+  sum+=len;
+ }
+ return null;
+}
+function cameraAngleDiff(a,b){return Math.abs(((a-b+540)%360)-180);}
+function updateCameraWarning(){
+ const box=$('cameraWarning');
+ if(!cameraDatabase||!driving||!activeTrip||!gpsPoint||Date.now()-lastGpsTime>8000||
+    !Number.isFinite(lastGpsCoords?.accuracy)||lastGpsCoords.accuracy>25||
+    !Number.isFinite(lastGpsCoords?.heading)||!Number.isFinite(lastGpsCoords?.speed)||
+    lastGpsCoords.speed<3){
+  box.classList.remove('visible');return;
+ }
+ const here=nearestOnRoute(gpsPoint,activeTrip);
+ if(here.error>35){box.classList.remove('visible');return;}
+ const gpsHeading=lastGpsCoords.heading;
+ const routeHeading=cameraRouteDirection(activeTrip,here.progress);
+ if(routeHeading===null||cameraAngleDiff(gpsHeading,routeHeading)>40){box.classList.remove('visible');return;}
+ let best=null;
+ for(const camera of cameraDatabase.cameras){
+  if(!Number.isFinite(camera.lat)||!Number.isFinite(camera.lon))continue;
+  if(cameraDistanceKm(gpsPoint[0],gpsPoint[1],camera.lat,camera.lon)>2.3)continue;
+  const near=nearestOnRoute([camera.lat,camera.lon],activeTrip);
+  const ahead=near.progress-here.progress;
+  if(ahead<0||ahead>2000||near.error>25)continue;
+  const roadHeading=cameraRouteDirection(activeTrip,near.progress);
+  if(roadHeading===null||cameraAngleDiff(roadHeading,gpsHeading)>50)continue;
+  if(!camera.bothWays&&Number.isFinite(camera.bearing)&&cameraAngleDiff(camera.bearing,roadHeading)>45)continue;
+  if(!best||ahead<best.ahead)best={camera,ahead};
+ }
+ if(!best){box.classList.remove('visible');return;}
+ const {camera,ahead}=best;
+ const stage=ahead<=500?'500':ahead<=1000?'1000':'2000';
+ const id=String(camera.id);
+ const key=id+'|'+stage;
+ const [label]=cameraLabels[camera.type]||['Punkt kontroli'];
+ box.textContent='⚠️ '+label+' za około '+Math.max(50,Math.round(ahead/50)*50)+' m • sprawdź znaki';
+ box.classList.add('visible');
+ if(!cameraWarned.has(key)&&Date.now()-cameraWarningLastAt>12000){
+  cameraWarned.add(key);cameraWarningLastId=id;cameraWarningLastStage=stage;cameraWarningLastAt=Date.now();
+  if(voiceEnabled)sayNav('Uwaga. '+label+'. Za około '+Math.max(50,Math.round(ahead/50)*50)+' metrów.');
+ }
+}
 const gpsIcon=L.divIcon({className:'',html:'<div class="gps-dot"></div>',iconSize:[22,22],iconAnchor:[11,11]});
 const status=s=>$('status').textContent=s;
 const speedDisplay=new MutationObserver(()=>{$('topspeedvalue').textContent=$('speedvalue').textContent});
@@ -634,7 +694,7 @@ function updateTrip(){
  $('remaintime').textContent=durationLabel(duration);
  $('arrival').textContent=new Date(Date.now()+duration*1000).toLocaleTimeString('pl-PL',{hour:'2-digit',minute:'2-digit'});
 }
-function clearTrip(){resetOffRoute();routeOptions=[];$('alternatives').classList.remove('active');$('alternatives').replaceChildren();selectedFuelStop=null;navTrack=null;showAfter(null);showTurn("↑","—","Oczekiwanie na trasę");fuelRequest++;fuelMarkers.forEach(m=>map.removeLayer(m));fuelMarkers=[];$('fuelbox').classList.remove('active');activeTrip=null;$('tripbar').classList.remove('active')}
+function clearTrip(){$('cameraWarning').classList.remove('visible');cameraWarned.clear();resetOffRoute();routeOptions=[];$('alternatives').classList.remove('active');$('alternatives').replaceChildren();selectedFuelStop=null;navTrack=null;showAfter(null);showTurn("↑","—","Oczekiwanie na trasę");fuelRequest++;fuelMarkers.forEach(m=>map.removeLayer(m));fuelMarkers=[];$('fuelbox').classList.remove('active');activeTrip=null;$('tripbar').classList.remove('active')}
 // 0.5: punkty amenity=fuel z OSM, bez punktów wyłącznie ładowania EV.
 // To przybliżenie bliskości trasy, NIE potwierdzenie dostępnego zjazdu.
 function distanceToPolyline(pos,trip){
@@ -1289,7 +1349,7 @@ function updateGps(p){
    ? String(Math.round(speed*3.6)) : '—';
  $('gpsstate').textContent='GPS aktywny • dokładność '+Math.round(c.accuracy||0)+' m';
  if(activeTrip){if(driving&&fuelCandidates.length)renderCompactFuel();checkOffRoute(c.accuracy);if(driving&&offRouteConfirmed&&!autoRerouteBusy)void autoReroute();updateTrip();if(driving&&Number.isFinite(c.accuracy)&&c.accuracy<=35&&!offRouteConfirmed)updateManeuver();}
- if(driving)refreshSpeedLimit(gpsPoint,c.accuracy);
+ if(driving)refreshSpeedLimit(gpsPoint,c.accuracy);\n updateCameraWarning();
  updateBearing(c);
  if(driving)followGpsCamera();
  if(firstFix)status('Śledzenie GPS aktywne. Naciśnij „Wyznacz trasę”, aby obliczyć trasę.');
