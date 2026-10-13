@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#102236"><title>NaviPetrus 0.29.3</title>
+<meta name="theme-color" content="#102236"><title>NaviPetrus 0.35</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#102236;color:#fff}
@@ -270,9 +270,15 @@ body:not(.driving) #alternatives button{
 @media(max-height:740px){
  body:not(.driving) .bottom{bottom:calc(8px + env(safe-area-inset-bottom,0px))!important;max-height:45svh!important}
 }
+
+/* 0.35: obrót samej mapy w trybie jazdy, bez zmiany wymiarów dokumentu Safari. */
+html,body{overflow:hidden!important;overscroll-behavior:none!important}
+#map{transform:none!important;transform-origin:50% 50%!important;transition:transform .35s linear!important;will-change:transform}
+body.driving.bearing-mode #map{transform:rotate(var(--map-angle,0deg)) scale(1.43)!important;transform-origin:50% 50%!important}
+/* Sterowanie pozostaje poza obracanym #map. */
 </style></head><body><div id="map"></div><button id="themebtn" type="button" aria-label="Zmień motyw mapy">☾ NOC</button><button id="routeview" type="button" title="Pokaż pozostałą trasę" aria-label="Pokaż całą pozostałą trasę" aria-pressed="false">⇄</button><button id="recenter" type="button" title="Wyśrodkuj na GPS i włącz śledzenie" aria-label="Wróć do mojej pozycji GPS">◎</button>
 <div class="panel">
-<h1>🚗 NaviPetrus <small>PROTOTYP 0.34 • TEST</small></h1>
+<h1>🚗 NaviPetrus <small>PROTOTYP 0.35 • TEST</small></h1>
 <div class="fields">
 <input id="start" placeholder="Start: adres lub współrzędne" value="Moja pozycja GPS">
 <button class="secondary" id="gps" title="Ustaw start z GPS">📍 GPS</button>
@@ -434,22 +440,24 @@ function setRouteOverview(on){
 }
 $('routeview').onclick=()=>setRouteOverview(!routeOverview);
 map.on('dragstart',()=>{
- if(driving){followGps=false;$('recenter').classList.add('manual');}
+ if(driving){followGps=false;$('recenter').classList.add('manual');applyMapBearing();}
 });
 $('recenter').onclick=()=>{
  if(routeOverview){setRouteOverview(false);return;}
  if(!gpsPoint){status('Brak pozycji GPS.');return;}
  followGps=true;
  $('recenter').classList.remove('manual');
+ applyMapBearing();
  map.setView(gpsPoint,Math.max(map.getZoom(),15),{animate:true});
  status('Mapa wyśrodkowana. Śledzenie pozycji wznowione.');
 };
 let mapBearing=0,hasBearing=false;
 function applyMapBearing(){
- // 0.27.4: obracanie całego kontenera Leaflet powodowało ucięcie ekranu i utratę przycisków na iOS.
- // Tymczasowo zawsze północ u góry; kierunek GPS nadal służy do diagnostyki.
- document.body.classList.remove('bearing-mode');
- document.documentElement.style.setProperty('--map-angle','0deg');
+ // Obracamy WYŁĄCZNIE warstwę mapy, nigdy stronę ani przyciski interfejsu.
+ // W widoku całej trasy, przy ręcznym przesuwaniu lub bez wiarygodnego kursu: północ u góry.
+ const enabled=driving&&followGps&&!routeOverview&&hasBearing;
+ document.body.classList.toggle('bearing-mode',enabled);
+ document.documentElement.style.setProperty('--map-angle',enabled?(-mapBearing)+'deg':'0deg');
 }
 function updateBearing(coords){
  // iPhone może nie podawać kierunku; przy postoju nie obracamy mapy.
@@ -473,7 +481,7 @@ function setDriving(on){
  $('routeview').setAttribute('aria-label','Pokaż całą pozostałą trasę');
  if(!on){autoRerouteBusy=false;}
  resetOffRoute();
- if(on){followGps=true;$('recenter').classList.remove('manual');}
+ if(on){followGps=true;$('recenter').classList.remove('manual');hasBearing=false;}
  document.body.classList.toggle('driving',on);
  if(on){if(!fuelCandidates.length)loadFuel(false);else renderCompactFuel();}else{$('fuelbox').classList.remove('active');}
  if(!on){hasBearing=false;mapBearing=0;}
