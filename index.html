@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#102236"><title>NaviPetrus 0.37</title>
+<meta name="theme-color" content="#102236"><title>NaviPetrus 0.39</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#102236;color:#fff}
@@ -287,7 +287,7 @@ body.driving.bearing-mode #map{transform:rotate(var(--map-angle,0deg)) scale(1.4
 body.previewing .panel,body.previewing .bottom,body.previewing #themebtn,body.previewing #mapzoom{display:none!important}
 </style></head><body><div id="map"></div><button id="themebtn" type="button" aria-label="Zmień motyw mapy">☾ NOC</button><button id="routeview" type="button" title="Pokaż pozostałą trasę" aria-label="Pokaż całą pozostałą trasę" aria-pressed="false">⇄</button><button id="recenter" type="button" title="Wyśrodkuj na GPS i włącz śledzenie" aria-label="Wróć do mojej pozycji GPS">◎</button>
 <div class="panel">
-<h1>🚗 NaviPetrus <small>PROTOTYP 0.38 • TEST</small></h1>
+<h1>🚗 NaviPetrus <small>PROTOTYP 0.39 • TEST</small></h1>
 <div class="fields">
 <input id="start" placeholder="Start: adres lub współrzędne" value="Moja pozycja GPS">
 <button class="secondary" id="gps" title="Ustaw start z GPS">📍 GPS</button>
@@ -296,7 +296,7 @@ body.previewing .panel,body.previewing .bottom,body.previewing #themebtn,body.pr
 </div>
 
 <div class="actions"><button id="route">Wyznacz trasę</button><button id="drive" style="display:none">▶ START</button><button class="secondary" id="clear">Wyczyść</button><button class="dark" id="toggle">Pomoc</button><button id="diagbtn" type="button">Diagnostyka</button><button id="voicebtn" type="button" title="Włącz lub wyłącz komunikaty głosowe">🔇 Głos</button></div>
-<div id="help">Przycisk Diagnostyka pokazuje aktualność GPS, dokładność, kierunek, prędkość i odchylenie od trasy. Przycisk DZIEŃ/NOC zmienia ręcznie jasność i kolory kafelków mapy (motyw jest zapamiętywany w przeglądarce). Wpisz nazwy miejsc lub adresy: pozostają widoczne po wyznaczeniu trasy. Przycisk ★ Ulubione otwiera listę zapisanych celów z opcjami Nawiguj, Usuń i Dodaj obecny cel. W 0.38 po wybraniu wyniku wyszukiwania mapa pokazuje jego położenie. Potwierdź „To mój cel” albo wybierz „Szukaj ponownie”. Przycisk Głos włącza próbne komunikaty po polsku podczas jazdy. W 0.27.1 dodawanie ulubionego wymaga osobnego podania wyszukiwanego miejsca i etykiety oraz potwierdzenia wyniku; starsze wpisy wymagają ponownego potwierdzenia lokalizacji. Po uruchomieniu GPS pole startu pokazuje „Moja pozycja GPS”, a aktualne współrzędne pozostają wewnętrznymi danymi nawigacji. Możesz też podać współrzędne „szerokość, długość”. Możesz też przytrzymać mapę, aby ustawić cel. GPS wymaga zgody i HTTPS. Po naciśnięciu GPS rozpoczyna się śledzenie pozycji i prędkości. W trybie START prędkość i znak są u góry, a na dole godzina przyjazdu, czas i dystans. W 0.27.4 mapa pozostaje północą do góry, ponieważ eksperymentalny obrót powodował ucinanie ekranu na iPhonie. Pasek manewru pokazuje orientacyjną odległość i kierunek kolejnego skrętu oraz podgląd następnego manewru („POTEM”), gdy dane są dostępne na podstawie danych trasowania; nie zastępuje znaków drogowych. Bez aktualnego GPS manewr nie jest śledzony. Po wybraniu „Wyznacz trasę” wybierz „Płatne” lub „Omijaj płatne”. W 0.33 panel pokazuje do trzech rzeczywistych wariantów zwróconych przez serwer, porównuje czas i kilometry. Jeśli serwer znajdzie mniej tras, pokazuje informację zamiast wymyślać trzecią. W 0.31 przycisk ⇄ w trybie START pokazuje pozostałą trasę; ponowne dotknięcie przywraca widok jazdy. Jeśli serwer zwróci więcej wariantów, pojawią się przyciski wyboru trasy i jasne linie alternatywne. Nie zawsze dostępne są dwie lub trzy trasy. Po obliczeniu trasy użyj START, aby schować panel i śledzić pozycję na mapie. Znak przy przycisku Menu pokazuje tylko dostępne, orientacyjne dane OpenStreetMap; znak drogowy ma pierwszeństwo. Przycisk Menu ponownie otwiera panel. Gdy pomiar prędkości jest niedostępny, widoczne są kreski. iOS może wstrzymać GPS po wygaszeniu ekranu lub przejściu do innej aplikacji. Po wyznaczeniu trasy i uruchomieniu GPS dolny panel pokazuje szacunkowe pozostałe kilometry, czas i godzinę przyjazdu. Wartości są obliczane z postępu na zaplanowanej trasie, bez korków. W wersji 0.33 po dwóch wiarygodnych pomiarach GPS wyraźnie poza trasą nawigacja próbuje automatycznie przeliczyć dojazd od bieżącej pozycji z zachowaniem celu i wybranego trybu opłat. Próby są ograniczane czasowo, a spóźniony wynik jest odrzucany, jeśli pojazd zdążył znacznie zmienić pozycję; brak internetu może uniemożliwić przeliczenie. Po zmianie startu przelicz trasę. Stacje paliw są testowo wyszukiwane przez Nominatim (OpenStreetMap); wyniki mogą być niekompletne. W wersji 0.21.10 Blisko szuka do 5 km od GPS, a Szukaj dalej sprawdza odcinki trasy przez kilka serwerów Overpass. Przy całkowitej awarii używa ograniczonego wyszukiwania awaryjnego Nominatim w okolicy celu; nie jest to pełna lista stacji na trasie. W razie błędu wyniki mogą być niepełne. Oba tryby filtrują stacje do 500 m od trasy; dostępność zjazdu, kierunek dojazdu, rzeczywista długość objazdu i otwarcie stacji NIE są jeszcze sprawdzane. Nie wybieraj zjazdu bez sprawdzenia znaków i bezpiecznej trasy. To wersja do testów, nie do prowadzenia podczas jazdy. Tryb „Płatne” używa OSRM i nie filtruje dróg płatnych. Tryb „Omijaj płatne” próbuje wyznaczyć trasę przez usługę Valhalla z opcją exclude_tolls; nie gwarantuje uniknięcia każdej opłaty ani uwzględnienia aktualnych przepisów. Jeżeli usługa jest niedostępna, aplikacja zgłosi błąd zamiast po cichu wyznaczać trasę płatną. Zawsze sprawdź znaki i opłaty. Trasy nie uwzględniają korków.</div>
+<div id="help">Przycisk Diagnostyka pokazuje aktualność GPS, dokładność, kierunek, prędkość i odchylenie od trasy. Przycisk DZIEŃ/NOC zmienia ręcznie jasność i kolory kafelków mapy (motyw jest zapamiętywany w przeglądarce). Wpisz nazwy miejsc lub adresy: pozostają widoczne po wyznaczeniu trasy. Przycisk ★ Ulubione otwiera listę zapisanych celów z opcjami Nawiguj, Usuń i Dodaj obecny cel. W 0.39 wyszukiwanie obejmuje również zagraniczne stacje i pozwala doprecyzować miejscowość przez podanie regionu (np. Grzmiąca 46, okolice Brodnicy). W 0.38 po wybraniu wyniku wyszukiwania mapa pokazuje jego położenie. Potwierdź „To mój cel” albo wybierz „Szukaj ponownie”. Przycisk Głos włącza próbne komunikaty po polsku podczas jazdy. W 0.27.1 dodawanie ulubionego wymaga osobnego podania wyszukiwanego miejsca i etykiety oraz potwierdzenia wyniku; starsze wpisy wymagają ponownego potwierdzenia lokalizacji. Po uruchomieniu GPS pole startu pokazuje „Moja pozycja GPS”, a aktualne współrzędne pozostają wewnętrznymi danymi nawigacji. Możesz też podać współrzędne „szerokość, długość”. Możesz też przytrzymać mapę, aby ustawić cel. GPS wymaga zgody i HTTPS. Po naciśnięciu GPS rozpoczyna się śledzenie pozycji i prędkości. W trybie START prędkość i znak są u góry, a na dole godzina przyjazdu, czas i dystans. W 0.27.4 mapa pozostaje północą do góry, ponieważ eksperymentalny obrót powodował ucinanie ekranu na iPhonie. Pasek manewru pokazuje orientacyjną odległość i kierunek kolejnego skrętu oraz podgląd następnego manewru („POTEM”), gdy dane są dostępne na podstawie danych trasowania; nie zastępuje znaków drogowych. Bez aktualnego GPS manewr nie jest śledzony. Po wybraniu „Wyznacz trasę” wybierz „Płatne” lub „Omijaj płatne”. W 0.33 panel pokazuje do trzech rzeczywistych wariantów zwróconych przez serwer, porównuje czas i kilometry. Jeśli serwer znajdzie mniej tras, pokazuje informację zamiast wymyślać trzecią. W 0.31 przycisk ⇄ w trybie START pokazuje pozostałą trasę; ponowne dotknięcie przywraca widok jazdy. Jeśli serwer zwróci więcej wariantów, pojawią się przyciski wyboru trasy i jasne linie alternatywne. Nie zawsze dostępne są dwie lub trzy trasy. Po obliczeniu trasy użyj START, aby schować panel i śledzić pozycję na mapie. Znak przy przycisku Menu pokazuje tylko dostępne, orientacyjne dane OpenStreetMap; znak drogowy ma pierwszeństwo. Przycisk Menu ponownie otwiera panel. Gdy pomiar prędkości jest niedostępny, widoczne są kreski. iOS może wstrzymać GPS po wygaszeniu ekranu lub przejściu do innej aplikacji. Po wyznaczeniu trasy i uruchomieniu GPS dolny panel pokazuje szacunkowe pozostałe kilometry, czas i godzinę przyjazdu. Wartości są obliczane z postępu na zaplanowanej trasie, bez korków. W wersji 0.33 po dwóch wiarygodnych pomiarach GPS wyraźnie poza trasą nawigacja próbuje automatycznie przeliczyć dojazd od bieżącej pozycji z zachowaniem celu i wybranego trybu opłat. Próby są ograniczane czasowo, a spóźniony wynik jest odrzucany, jeśli pojazd zdążył znacznie zmienić pozycję; brak internetu może uniemożliwić przeliczenie. Po zmianie startu przelicz trasę. Stacje paliw są testowo wyszukiwane przez Nominatim (OpenStreetMap); wyniki mogą być niekompletne. W wersji 0.21.10 Blisko szuka do 5 km od GPS, a Szukaj dalej sprawdza odcinki trasy przez kilka serwerów Overpass. Przy całkowitej awarii używa ograniczonego wyszukiwania awaryjnego Nominatim w okolicy celu; nie jest to pełna lista stacji na trasie. W razie błędu wyniki mogą być niepełne. Oba tryby filtrują stacje do 500 m od trasy; dostępność zjazdu, kierunek dojazdu, rzeczywista długość objazdu i otwarcie stacji NIE są jeszcze sprawdzane. Nie wybieraj zjazdu bez sprawdzenia znaków i bezpiecznej trasy. To wersja do testów, nie do prowadzenia podczas jazdy. Tryb „Płatne” używa OSRM i nie filtruje dróg płatnych. Tryb „Omijaj płatne” próbuje wyznaczyć trasę przez usługę Valhalla z opcją exclude_tolls; nie gwarantuje uniknięcia każdej opłaty ani uwzględnienia aktualnych przepisów. Jeżeli usługa jest niedostępna, aplikacja zgłosi błąd zamiast po cichu wyznaczać trasę płatną. Zawsze sprawdź znaki i opłaty. Trasy nie uwzględniają korków.</div>
 </div>
 <button id="showpanel" class="secondary" aria-label="Otwórz panel" style="display:none">☰ Menu</button><div id="toplimit" aria-label="Orientacyjne ograniczenie prędkości OSM"><span id="limitSign" class="unknown">?</span><div id="topspeed"><strong id="topspeedvalue">—</strong><small>km/h</small></div></div>
 <div id="nextturn" aria-live="off"><span id="turnarrow">↑</span><div id="turndetails"><div id="turndistance">—</div><div id="turnstreet">Oczekiwanie na trasę</div></div><div id="afterturn"><span id="afterarrow">↑</span><div id="afterdetails"><div id="afterlabel">POTEM</div><div id="afterdistance">—</div><div id="afterstreet">—</div></div></div></div>
@@ -744,35 +744,48 @@ function railScore(x,query){
  const match=words.reduce((n,w)=>n+(name.includes(w)?1:0),0);
  return (railway?100:0)+(stationName?15:0)+match*4;
 }
+// 0.39: wiele regionów, doprecyzowanie okolic i stacje zagraniczne.
+function normalizeSearch(s){return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/ł/g,'l')}
+function searchVariants(raw,rail){
+ const base=raw.replace(/\b(PKP|dworzec|stacja kolejowa|railway|kolejowy|kolejowa)\b/gi,'').replace(/\s+/g,' ').trim();
+ const variants=[raw];
+ if(rail&&base)variants.push(base+' railway station',base+' Bahnhof',base+' stacja kolejowa');
+ // „okolice Brodnicy” to wskazówka lokalizacyjna, nie część nazwy ulicy.
+ const near=raw.match(/^(.*?),?\s+(?:okolice|koło|kolo|niedaleko)\s+(.+)$/i);
+ if(near){variants.push(near[1].trim()+', '+near[2].trim());variants.push(near[1].trim());}
+ return [...new Set(variants.filter(Boolean))].slice(0,4);
+}
 async function searchPlaces(q){
  const raw=q.trim();if(!raw)throw Error('Wpisz nazwę celu');
  const rail=isRailQuery(raw);
- const base=raw.replace(/\b(PKP|dworzec|stacja kolejowa|railway|kolejowy|kolejowa)\b/gi,'').replace(/\s+/g,' ').trim();
- const queries=rail&&base?[raw,base+' stacja kolejowa','dworzec kolejowy '+base,base+' PKP']:[raw];
+ const variants=searchVariants(raw,rail);
+ const explicitForeign=/\b(niemcy|germany|deutschland|czechy|czeska|czechia|austria|slowacja|slovakia|francja|france|belgia|belgium|holandia|netherlands)\b/i.test(raw);
+ const foreignStation=rail&&/\b(horka|gorlitz|goerlitz|görlitz|oderbrücke|oderbruecke|frankfurt\s*\(oder\))\b/i.test(raw);
  const out=[],seen=new Set();let lastError=null;
- for(const term of [...new Set(queries)]){
+ for(const term of variants){
   try{
-   const url='https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=12&countrycodes=pl&q='+encodeURIComponent(term);
-   const ctrl=new AbortController();const timer=setTimeout(()=>ctrl.abort(),6500);
-   let r;try{r=await fetch(url,{headers:{'Accept-Language':'pl'},signal:ctrl.signal})}finally{clearTimeout(timer)}
+   // Brak countrycodes=pl: umożliwia wyszukanie Niemiec i rozróżnienie polskich regionów.
+   const params=new URLSearchParams({format:'json',addressdetails:'1',limit:'20',q:term});
+   const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),8500);
+   let r;try{r=await fetch('https://nominatim.openstreetmap.org/search?'+params,{headers:{'Accept-Language':'pl'},signal:ctrl.signal})}finally{clearTimeout(timer)}
    if(!r.ok)throw Error('Serwer adresów HTTP '+r.status);
    for(const x of await r.json()){
-    const key=x.osm_type+':'+x.osm_id;
+    const key=(x.osm_type||'')+':'+(x.osm_id||'')+':'+Number(x.lat).toFixed(5)+':'+Number(x.lon).toFixed(5);
     if(!seen.has(key)){seen.add(key);out.push(x)}
    }
   }catch(e){lastError=e}
-  if(!rail&&out.length)break;
-  // Nie przeciążamy publicznej wyszukiwarki: jeśli mamy kilka stacji, kończymy.
+  if(!rail&&out.length>=10)break;
   if(rail&&out.filter(x=>railScore(x,raw)>=100).length>=5)break;
  }
- if(!out.length)throw Error(lastError?'Nie udało się wyszukać miejsca: '+lastError.message:'Nie znaleziono „'+raw+'”. Spróbuj pełnej nazwy stacji.');
+ if(!out.length)throw Error(lastError?'Nie udało się wyszukać miejsca: '+lastError.message:'Nie znaleziono „'+raw+'”. Dodaj powiat, województwo albo pobliskie miasto.');
  if(rail){
   const stations=out.filter(x=>railScore(x,raw)>=100);
-  if(!stations.length)throw Error('Nie znalazłam potwierdzonej stacji kolejowej dla „'+raw+'”. Doprecyzuj nazwę dworca lub wskaż punkt na mapie. Nie wybieram centrum miasta zamiast PKP.');
+  if(!stations.length)throw Error('Nie znaleziono potwierdzonej stacji „'+raw+'”. Spróbuj nazwy niemieckiej, np. „Horka Bahnhof, Deutschland”, albo wskaż punkt na mapie. Nie wybieram centrum miasta zamiast stacji.');
   stations.sort((a,b)=>railScore(b,raw)-railScore(a,raw));
-  return stations.slice(0,12);
+  return stations.slice(0,16);
  }
- return out.slice(0,12);
+ // Doprecyzowane zapytania zachowują kolejność odpowiedzi serwera; nie zgadujemy regionu.
+ return out.slice(0,16);
 }
 // 0.38: pokazujemy rzeczywisty punkt na mapie PRZED zaakceptowaniem celu.
 // Nie zmieniamy wybranego celu ani nie obliczamy trasy, dopóki użytkownik nie potwierdzi.
@@ -812,7 +825,7 @@ async function choosePlace(query){
  }
  const items=await searchPlaces(query);
  const choices=items.map((x,i)=>(i+1)+'. '+x.display_name).join('\n');
- const answer=prompt('WYBIERZ MIEJSCE: '+query+'\n\nWpisz numer wyniku, a pokażę go na mapie:\n'+choices+'\n\nAnuluj = nie wyznaczaj trasy','1');
+ const answer=prompt('WYBIERZ MIEJSCE: '+query+'\n\nWpisz numer wyniku, a pokażę go na mapie:\n'+choices+'\n\nJeśli brak właściwego miejsca, anuluj i dopisz region, np. „okolice Brodnicy” lub „Niemcy”.\nAnuluj = nie wyznaczaj trasy','1');
  if(answer===null)throw Error('Anulowano wybór lokalizacji');
  const n=Number(answer);
  if(!Number.isInteger(n)||n<1||n>items.length)throw Error('Nie wybrano poprawnego numeru miejsca');
