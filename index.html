@@ -272,7 +272,7 @@ body:not(.driving) #alternatives button{
 }
 </style></head><body><div id="map"></div><button id="themebtn" type="button" aria-label="Zmień motyw mapy">☾ NOC</button><button id="routeview" type="button" title="Pokaż pozostałą trasę" aria-label="Pokaż całą pozostałą trasę" aria-pressed="false">⇄</button><button id="recenter" type="button" title="Wyśrodkuj na GPS i włącz śledzenie" aria-label="Wróć do mojej pozycji GPS">◎</button>
 <div class="panel">
-<h1>🚗 NaviPetrus <small>PROTOTYP 0.33 • TEST</small></h1>
+<h1>🚗 NaviPetrus <small>PROTOTYP 0.34 • TEST</small></h1>
 <div class="fields">
 <input id="start" placeholder="Start: adres lub współrzędne" value="Moja pozycja GPS">
 <button class="secondary" id="gps" title="Ustaw start z GPS">📍 GPS</button>
@@ -1023,6 +1023,35 @@ async function refreshSpeedLimit(pos,accuracy){
  }catch(e){if(seq===limitSequence)displayLimit(null)}
  finally{clearTimeout(timer)}
 }
+// 0.34: płynny znacznik GPS. Logika tras nadal używa SUROWEGO pomiaru.
+let gpsVisualPoint=null,gpsVisualFrame=null,gpsVisualStart=0,gpsVisualFrom=null,gpsVisualTo=null;
+function animateGpsMarker(now){
+ if(!gpsMarker||!gpsVisualFrom||!gpsVisualTo){gpsVisualFrame=null;return;}
+ const t=Math.min(1,(now-gpsVisualStart)/650);
+ const eased=t*t*(3-2*t);
+ gpsVisualPoint=[gpsVisualFrom[0]+(gpsVisualTo[0]-gpsVisualFrom[0])*eased,gpsVisualFrom[1]+(gpsVisualTo[1]-gpsVisualFrom[1])*eased];
+ gpsMarker.setLatLng(gpsVisualPoint);
+ if(t<1)gpsVisualFrame=requestAnimationFrame(animateGpsMarker);
+ else{gpsVisualFrame=null;gpsVisualPoint=gpsVisualTo.slice();}
+}
+function updateGpsVisual(point,accuracy){
+ if(!gpsMarker){
+  gpsVisualPoint=point.slice();
+  gpsMarker=L.marker(gpsVisualPoint,{icon:gpsIcon,zIndexOffset:1000}).addTo(map).bindPopup('Twoja pozycja GPS');
+  return;
+ }
+ if(gpsVisualFrame!==null){cancelAnimationFrame(gpsVisualFrame);gpsVisualFrame=null;}
+ const from=gpsVisualPoint||gpsMarker.getLatLng();
+ const start=Array.isArray(from)?from:[from.lat,from.lng];
+ // Nie animuj skoków po utracie GPS ani dużych korekt pozycji.
+ const distance=map.distance(start,point);
+ if(distance>100||Date.now()-lastGpsVisualAt>6000||!Number.isFinite(accuracy)||accuracy>80){
+  gpsVisualPoint=point.slice();gpsMarker.setLatLng(gpsVisualPoint);return;
+ }
+ gpsVisualFrom=start.slice();gpsVisualTo=point.slice();gpsVisualStart=performance.now();
+ gpsVisualFrame=requestAnimationFrame(animateGpsMarker);
+}
+let lastGpsVisualAt=0;
 // watchPosition działa tylko podczas dostępności lokalizacji dla strony.
 function updateGps(p){
  const c=p.coords;
@@ -1033,10 +1062,10 @@ function updateGps(p){
  const firstFix=(gpsFixCount++===0);
  gpsWaiting.remove();
  if(startFromGps)$('start').value='Moja pozycja GPS';
- if(gpsMarker)map.removeLayer(gpsMarker);
- if(gpsAccuracy)map.removeLayer(gpsAccuracy);
- gpsAccuracy=L.circle(gpsPoint,{radius:Math.max(c.accuracy||0,1),color:'#1677ff',weight:1,fillColor:'#1677ff',fillOpacity:.12,interactive:false}).addTo(map);
- gpsMarker=L.marker(gpsPoint,{icon:gpsIcon,zIndexOffset:1000}).addTo(map).bindPopup('Twoja pozycja GPS');
+ if(gpsAccuracy)gpsAccuracy.setLatLng(gpsPoint).setRadius(Math.max(c.accuracy||0,1));
+ else gpsAccuracy=L.circle(gpsPoint,{radius:Math.max(c.accuracy||0,1),color:'#1677ff',weight:1,fillColor:'#1677ff',fillOpacity:.12,interactive:false}).addTo(map);
+ updateGpsVisual(gpsPoint,c.accuracy);
+ lastGpsVisualAt=Date.now();
  if(firstFix){
    map.setView(gpsPoint,Math.max(map.getZoom(),16));
    if(!activeTrip){routeRequest++;clean();clearTrip();$('route').disabled=false;}
