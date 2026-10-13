@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#102236"><title>NaviPetrus 0.29</title>
+<meta name="theme-color" content="#102236"><title>NaviPetrus 0.29.1</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#102236;color:#fff}
@@ -216,7 +216,7 @@ body.driving .bottom{max-height:24dvh;overflow:hidden!important}
 #showpanel{max-width:calc(100% - 20px)!important}
 @supports(height:100svh){html,body{height:100svh!important}}
 
-/* 0.29 — awaryjny kompaktowy widok Safari: pasek przeglądarki nie zakrywa ETA */
+/* 0.29.1 — awaryjny kompaktowy widok Safari: pasek przeglądarki nie zakrywa ETA */
 html,body{height:100svh!important;max-height:100svh!important;width:100%!important;max-width:100%!important;overflow:hidden!important}
 body{overscroll-behavior:none!important}
 .panel,.bottom{left:8px!important;right:8px!important;width:calc(100% - 16px)!important;max-width:calc(100% - 16px)!important}
@@ -238,17 +238,18 @@ body.driving #fuelbox{right:8px!important;top:calc(132px + env(safe-area-inset-t
 #map{height:100%!important;width:100%!important}
 @media(max-height:740px){.bottom{bottom:calc(76px + env(safe-area-inset-bottom,0px))!important}body.driving .bottom{bottom:calc(22px + env(safe-area-inset-bottom,0px))!important}}
 
-/* 0.29 — czytelne akcje wskazanego punktu mapy */
+/* 0.29.1 — czytelne akcje wskazanego punktu mapy */
 .map-pick-popup{display:grid;gap:8px;color:#13283b;font:14px system-ui,sans-serif}
 .map-pick-coords{font-size:12px;color:#586a77}
 .map-pick-actions{display:grid;gap:7px}
 .map-pick-actions button{font-size:15px!important;min-height:39px;padding:8px!important;border-radius:9px;white-space:normal}
 .leaflet-popup-content{margin:12px!important}
+#gps-waiting{position:fixed;z-index:1000;top:50%;left:50%;transform:translate(-50%,-50%);width:min(90vw,380px);box-sizing:border-box;padding:18px 16px;border-radius:15px;background:#172c40;color:#fff;font-weight:700;text-align:center;box-shadow:0 5px 24px #0006;pointer-events:none}
 </style></head><body><div id="map"></div><button id="themebtn" type="button" aria-label="Zmień motyw mapy">☾ NOC</button><button id="recenter" type="button" title="Wyśrodkuj na GPS i włącz śledzenie" aria-label="Wróć do mojej pozycji GPS">◎</button>
 <div class="panel">
-<h1>🚗 NaviPetrus <small>PROTOTYP 0.29 • TEST</small></h1>
+<h1>🚗 NaviPetrus <small>PROTOTYP 0.29.1 • TEST</small></h1>
 <div class="fields">
-<input id="start" placeholder="Start: adres lub współrzędne" value="Poznań, Polska">
+<input id="start" placeholder="Start: adres lub współrzędne" value="Moja pozycja GPS">
 <button class="secondary" id="gps" title="Ustaw start z GPS">📍 GPS</button>
 <input id="end" placeholder="Cel: adres lub współrzędne" value="52.31972, 14.55193">
 <button class="secondary" id="save" title="Otwórz ulubione miejsca">★ Ulubione</button>
@@ -287,7 +288,11 @@ $('themebtn').onclick=()=>{
  applyTheme();
 };
 applyTheme();
-const map=L.map('map',{zoomControl:false}).setView([52.4064,16.9252],9);
+const map=L.map('map',{zoomControl:false}).setView([52.0,19.0],6);
+// Nie udawaj, że mapa pokazuje aktualną pozycję przed uzyskaniem pomiaru GPS.
+const gpsWaiting=document.createElement('div');
+gpsWaiting.id='gps-waiting';gpsWaiting.textContent='Ustalam aktualną lokalizację GPS…';
+document.body.appendChild(gpsWaiting);
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',maxZoom:19}).addTo(map);
 $('zoomplus').onclick=()=>map.zoomIn();
 $('zoomminus').onclick=()=>map.zoomOut();
@@ -632,7 +637,7 @@ async function addFuelStop(st){
 }
 $('fuelrefresh').onclick=()=>{fuelMarkers.forEach(m=>map.removeLayer(m));fuelMarkers=[];loadFuel(false)};
 $('fuelfar').onclick=()=>{fuelMarkers.forEach(m=>map.removeLayer(m));fuelMarkers=[];loadFuel(true)};
-let startFromGps=false;
+let startFromGps=true;
 $('start').addEventListener('input',()=>{startFromGps=false});
 const point=s=>{let m=s.trim().match(/^(-?\d+(?:\.\d+)?)\s*[,;]\s*(-?\d+(?:\.\d+)?)$/);if(!m)return null;let a=+m[1],b=+m[2];return Math.abs(a)<=90&&Math.abs(b)<=180?[a,b]:null};
 // 0.27.2: nie przyjmujemy pierwszego wyniku bez sprawdzenia, zwłaszcza dla stacji PKP.
@@ -934,6 +939,7 @@ function updateGps(p){
  gpsPoint=[c.latitude,c.longitude];
  lastGpsTime=Date.now();
  const firstFix=(gpsFixCount++===0);
+ gpsWaiting.remove();
  if(startFromGps)$('start').value='Moja pozycja GPS';
  if(gpsMarker)map.removeLayer(gpsMarker);
  if(gpsAccuracy)map.removeLayer(gpsAccuracy);
@@ -1072,7 +1078,7 @@ $('favadd').onclick=async()=>{
   const a=readFavorites();a.push({name:name.trim(),address:found.display,coords:found.coords});writeFavorites(a);renderFavorites();favMessage('Zapisano potwierdzone miejsce.');
  }catch(e){favMessage('Nie zapisano: '+e.message)}finally{button.disabled=false}
 };
-// 0.29 — wskazanie dowolnego punktu na mapie: trasa lub ulubione.
+// 0.29.1 — wskazanie dowolnego punktu na mapie: trasa lub ulubione.
 // Nie geokodujemy ponownie punktu: zapamiętujemy dokładnie wybrane współrzędne.
 let mapPickMarker=null;
 function showMapPick(latlng){
@@ -1109,13 +1115,21 @@ function showMapPick(latlng){
 map.on('click',e=>showMapPick(e.latlng));
 map.on('contextmenu',e=>showMapPick(e.latlng));
 saved();
-// 0.29: uruchom GPS automatycznie po załadowaniu strony.
-// Pierwszy wiarygodny pomiar ustawia środek mapy; ręczny przycisk GPS pozostaje dostępny.
-if(navigator.geolocation){
-  if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded',()=>{$('gps').click();},{once:true});
-  }else{
-    $('gps').click();
+// 0.29.1: niezależna próba uzyskania pozycji przy odświeżeniu,
+// bez konieczności dotykania przycisku GPS. Safari może wymagać zgody.
+function autoStartGps(){
+ if(!navigator.geolocation){
+  gpsWaiting.textContent='Lokalizacja niedostępna. Sprawdź ustawienia Safari.';return;
+ }
+ if(gpsWatch===null)$('gps').click();
+ navigator.geolocation.getCurrentPosition(updateGps,e=>{
+  if(!gpsPoint){
+   gpsWaiting.textContent='Brak pozycji GPS. Zezwól na lokalizację dla tej witryny lub naciśnij GPS.';
+   $('gpsstate').textContent='Oczekiwanie na zgodę lub sygnał GPS';
   }
+ },{enableHighAccuracy:true,timeout:12000,maximumAge:0});
 }
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',autoStartGps,{once:true});
+else autoStartGps();
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!gpsPoint)autoStartGps();});
 </script></body></html>
