@@ -298,6 +298,14 @@ body.previewing .panel,body.previewing .bottom,body.previewing #themebtn,body.pr
 #placeCancel{min-height:45px;background:#38536d;color:#fff;border:0;border-radius:10px}
 /* 0.45: oznaczenia fotoradarów nie wpływają na układ ekranu */
 
+
+#cameraFeedback{position:absolute;z-index:815;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 195px);display:none;background:#152d42f5;color:#fff;border:2px solid #e4bc56;border-radius:14px;padding:12px;box-shadow:0 4px 18px #0008;text-align:center}
+#cameraFeedback.visible{display:block}
+#cameraFeedback .question{font-size:16px;font-weight:800;margin-bottom:9px}
+#cameraFeedback .actions{display:flex;gap:10px;justify-content:center}
+#cameraFeedback button{min-width:85px;min-height:45px;border:0;border-radius:9px;font-weight:800;font-size:16px;background:#dce8f3;color:#112b42}
+#cameraFeedback button:first-child{background:#30c2a7;color:#082c29}
+#cameraFeedback .hint{font-size:11px;color:#d9e6f0;margin-top:8px}
 #cameraWarning{position:absolute;z-index:810;left:12px;right:12px;top:calc(env(safe-area-inset-top,0px) + 58px);display:none;padding:12px 14px;border-radius:14px;background:#7d2708f2;color:#fff;box-shadow:0 5px 18px #0006;font-weight:750;font-size:15px;text-align:center;pointer-events:none}
 #cameraWarning.visible{display:block}
 #camerabtn{position:absolute;z-index:520;left:10px;top:calc(env(safe-area-inset-top,0px) + 88px);border:0;border-radius:10px;padding:8px 9px;background:#102236e8;color:white;font-size:12px;font-weight:700;box-shadow:0 2px 9px #0005}
@@ -314,9 +322,10 @@ body.driving #nextturn #afterdistance{font-size:11px;color:#d7e8f5}
 body.driving #nextturn{min-height:68px;align-items:center}
 </style></head><body><div id="map"></div><button id="themebtn" type="button" aria-label="Zmień motyw mapy">☾ NOC</button><button id="routeview" type="button" title="Pokaż pozostałą trasę" aria-label="Pokaż całą pozostałą trasę" aria-pressed="false">⇄</button><button id="recenter" type="button" title="Wyśrodkuj na GPS i włącz śledzenie" aria-label="Wróć do mojej pozycji GPS">◎</button>
 <div id="cameraWarning" role="status" aria-live="polite"></div>
+<div id="cameraFeedback" aria-live="polite"><div class="question" id="cameraFeedbackQuestion">📷 Czy fotoradar jest?</div><div class="actions"><button type="button" id="cameraYes">✓ TAK</button><button type="button" id="cameraNo">✕ NIE</button></div><div class="hint">Odpowiedz tylko na postoju lub jako pasażer. Zapis lokalny.</div></div>
 <button id="camerabtn" type="button" title="Pokaż fotoradary w okolicy GPS">📷 Radary</button>
 <div class="panel">
-<h1>🚗 NaviPetrus <small>PROTOTYP 0.48 • TEST</small></h1>
+<h1>🚗 NaviPetrus <small>PROTOTYP 0.49 • TEST</small></h1>
 <div class="fields">
 <input id="start" placeholder="Start: adres lub współrzędne" value="Moja pozycja GPS">
 <button class="secondary" id="gps" title="Ustaw start z GPS">📍 GPS</button>
@@ -438,19 +447,55 @@ function cameraRouteDirection(trip,progress){
  return null;
 }
 function cameraAngleDiff(a,b){return Math.abs(((a-b+540)%360)-180);}
+// 0.49 — potwierdzanie urządzeń: wyłącznie zapis w pamięci tego telefonu.
+const cameraFeedbackStorageKey='navipetrus.cameraFeedback.v1';
+let cameraFeedbackCurrent=null;
+const cameraFeedbackAsked=new Set();
+function hideCameraFeedback(){
+ $('cameraFeedback').classList.remove('visible');
+ cameraFeedbackCurrent=null;
+}
+function saveCameraFeedback(answer){
+ if(!cameraFeedbackCurrent)return;
+ const id=cameraFeedbackCurrent.id;
+ try{
+  const all=JSON.parse(localStorage.getItem(cameraFeedbackStorageKey)||'{}');
+  if(!all||typeof all!=='object'||Array.isArray(all))throw Error('format');
+  all[id]={answer,at:new Date().toISOString(),version:cameraDatabase?.version||null};
+  localStorage.setItem(cameraFeedbackStorageKey,JSON.stringify(all));
+  status('Zapisano lokalnie: '+(answer==='yes'?'TAK':'NIE')+' dla punktu '+id+'. Baza radarów pozostaje bez zmian.');
+ }catch(e){status('Nie udało się zapisać odpowiedzi w pamięci telefonu.');}
+ hideCameraFeedback();
+}
+$('cameraYes').onclick=()=>saveCameraFeedback('yes');
+$('cameraNo').onclick=()=>saveCameraFeedback('no');
+function updateCameraFeedback(camera,ahead){
+ const id=String(camera.id);
+ if(ahead>450||ahead<120){
+  if(cameraFeedbackCurrent?.id===id)hideCameraFeedback();
+  return;
+ }
+ if(cameraFeedbackCurrent?.id===id)return;
+ if(cameraFeedbackAsked.has(id))return;
+ cameraFeedbackAsked.add(id);
+ cameraFeedbackCurrent={id};
+ const label=(cameraLabels[camera.type]||['Punkt kontroli'])[0];
+ $('cameraFeedbackQuestion').textContent='📷 Czy urządzenie jest? '+label+' (ok. '+Math.round(ahead/50)*50+' m)';
+ $('cameraFeedback').classList.add('visible');
+}
 function updateCameraWarning(){
  const box=$('cameraWarning');
  if(!cameraDatabase||!driving||!activeTrip||!gpsPoint||Date.now()-lastGpsTime>8000||
     !Number.isFinite(lastGpsCoords?.accuracy)||lastGpsCoords.accuracy>25||
     !Number.isFinite(lastGpsCoords?.heading)||!Number.isFinite(lastGpsCoords?.speed)||
     lastGpsCoords.speed<3){
-  box.classList.remove('visible');return;
+  box.classList.remove('visible');hideCameraFeedback();return;
  }
  const here=nearestOnRoute(gpsPoint,activeTrip);
- if(here.error>35){box.classList.remove('visible');return;}
+ if(here.error>35){box.classList.remove('visible');hideCameraFeedback();return;}
  const gpsHeading=lastGpsCoords.heading;
  const routeHeading=cameraRouteDirection(activeTrip,here.progress);
- if(routeHeading===null||cameraAngleDiff(gpsHeading,routeHeading)>40){box.classList.remove('visible');return;}
+ if(routeHeading===null||cameraAngleDiff(gpsHeading,routeHeading)>40){box.classList.remove('visible');hideCameraFeedback();return;}
  let best=null;
  for(const camera of cameraDatabase.cameras){
   if(!Number.isFinite(camera.lat)||!Number.isFinite(camera.lon))continue;
@@ -463,8 +508,9 @@ function updateCameraWarning(){
   if(!camera.bothWays&&Number.isFinite(camera.bearing)&&cameraAngleDiff(camera.bearing,roadHeading)>45)continue;
   if(!best||ahead<best.ahead)best={camera,ahead};
  }
- if(!best){box.classList.remove('visible');return;}
+ if(!best){box.classList.remove('visible');hideCameraFeedback();return;}
  const {camera,ahead}=best;
+ updateCameraFeedback(camera,ahead);
  const stage=ahead<=500?'500':ahead<=1000?'1000':'2000';
  const id=String(camera.id);
  const key=id+'|'+stage;
@@ -696,7 +742,7 @@ function updateTrip(){
  $('remaintime').textContent=durationLabel(duration);
  $('arrival').textContent=new Date(Date.now()+duration*1000).toLocaleTimeString('pl-PL',{hour:'2-digit',minute:'2-digit'});
 }
-function clearTrip(){$('cameraWarning').classList.remove('visible');cameraWarned.clear();resetOffRoute();routeOptions=[];$('alternatives').classList.remove('active');$('alternatives').replaceChildren();selectedFuelStop=null;navTrack=null;showAfter(null);showTurn("↑","—","Oczekiwanie na trasę");fuelRequest++;fuelMarkers.forEach(m=>map.removeLayer(m));fuelMarkers=[];$('fuelbox').classList.remove('active');activeTrip=null;$('tripbar').classList.remove('active')}
+function clearTrip(){$('cameraWarning').classList.remove('visible');hideCameraFeedback();cameraFeedbackAsked.clear();cameraWarned.clear();resetOffRoute();routeOptions=[];$('alternatives').classList.remove('active');$('alternatives').replaceChildren();selectedFuelStop=null;navTrack=null;showAfter(null);showTurn("↑","—","Oczekiwanie na trasę");fuelRequest++;fuelMarkers.forEach(m=>map.removeLayer(m));fuelMarkers=[];$('fuelbox').classList.remove('active');activeTrip=null;$('tripbar').classList.remove('active')}
 // 0.5: punkty amenity=fuel z OSM, bez punktów wyłącznie ładowania EV.
 // To przybliżenie bliskości trasy, NIE potwierdzenie dostępnego zjazdu.
 function distanceToPolyline(pos,trip){
