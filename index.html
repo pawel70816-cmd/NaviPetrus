@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#102236"><title>NaviPetrus 0.39</title>
+<meta name="theme-color" content="#102236"><title>NaviPetrus 0.40</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#102236;color:#fff}
@@ -285,9 +285,20 @@ body.driving.bearing-mode #map{transform:rotate(var(--map-angle,0deg)) scale(1.4
 #destinationPreview .preview-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 #destinationPreview button{min-height:46px;font-size:15px;padding:8px 5px}
 body.previewing .panel,body.previewing .bottom,body.previewing #themebtn,body.previewing #mapzoom{display:none!important}
+
+/* 0.40: dotykowy wybór wyniku, bez systemowego prompt i klawiatury */
+#placePicker{position:fixed;inset:0;z-index:3500;background:#071523b8;display:none;align-items:center;justify-content:center;padding:14px;box-sizing:border-box}
+#placePicker.open{display:flex}
+#placePicker .pickcard{background:#182b40;color:#fff;border-radius:17px;padding:15px;width:100%;max-width:560px;max-height:82dvh;display:flex;flex-direction:column;gap:10px;box-sizing:border-box;box-shadow:0 10px 40px #0009}
+#placePicker h2{font-size:19px;margin:0}
+#placePicker .pickhint{font-size:13px;color:#d7e6f4}
+#placeList{overflow-y:auto;overscroll-behavior:contain;display:flex;flex-direction:column;gap:8px;min-height:0}
+#placeList button{width:100%;text-align:left;white-space:normal;overflow-wrap:anywhere;background:#e0eaf4;color:#152b40;border:0;border-radius:10px;padding:13px 12px;font-size:15px;line-height:1.4;min-height:50px}
+#placeList button:active{background:#27c3ae}
+#placeCancel{min-height:45px;background:#38536d;color:#fff;border:0;border-radius:10px}
 </style></head><body><div id="map"></div><button id="themebtn" type="button" aria-label="Zmień motyw mapy">☾ NOC</button><button id="routeview" type="button" title="Pokaż pozostałą trasę" aria-label="Pokaż całą pozostałą trasę" aria-pressed="false">⇄</button><button id="recenter" type="button" title="Wyśrodkuj na GPS i włącz śledzenie" aria-label="Wróć do mojej pozycji GPS">◎</button>
 <div class="panel">
-<h1>🚗 NaviPetrus <small>PROTOTYP 0.39 • TEST</small></h1>
+<h1>🚗 NaviPetrus <small>PROTOTYP 0.40 • TEST</small></h1>
 <div class="fields">
 <input id="start" placeholder="Start: adres lub współrzędne" value="Moja pozycja GPS">
 <button class="secondary" id="gps" title="Ustaw start z GPS">📍 GPS</button>
@@ -296,7 +307,7 @@ body.previewing .panel,body.previewing .bottom,body.previewing #themebtn,body.pr
 </div>
 
 <div class="actions"><button id="route">Wyznacz trasę</button><button id="drive" style="display:none">▶ START</button><button class="secondary" id="clear">Wyczyść</button><button class="dark" id="toggle">Pomoc</button><button id="diagbtn" type="button">Diagnostyka</button><button id="voicebtn" type="button" title="Włącz lub wyłącz komunikaty głosowe">🔇 Głos</button></div>
-<div id="help">Przycisk Diagnostyka pokazuje aktualność GPS, dokładność, kierunek, prędkość i odchylenie od trasy. Przycisk DZIEŃ/NOC zmienia ręcznie jasność i kolory kafelków mapy (motyw jest zapamiętywany w przeglądarce). Wpisz nazwy miejsc lub adresy: pozostają widoczne po wyznaczeniu trasy. Przycisk ★ Ulubione otwiera listę zapisanych celów z opcjami Nawiguj, Usuń i Dodaj obecny cel. W 0.39 wyszukiwanie obejmuje również zagraniczne stacje i pozwala doprecyzować miejscowość przez podanie regionu (np. Grzmiąca 46, okolice Brodnicy). W 0.38 po wybraniu wyniku wyszukiwania mapa pokazuje jego położenie. Potwierdź „To mój cel” albo wybierz „Szukaj ponownie”. Przycisk Głos włącza próbne komunikaty po polsku podczas jazdy. W 0.27.1 dodawanie ulubionego wymaga osobnego podania wyszukiwanego miejsca i etykiety oraz potwierdzenia wyniku; starsze wpisy wymagają ponownego potwierdzenia lokalizacji. Po uruchomieniu GPS pole startu pokazuje „Moja pozycja GPS”, a aktualne współrzędne pozostają wewnętrznymi danymi nawigacji. Możesz też podać współrzędne „szerokość, długość”. Możesz też przytrzymać mapę, aby ustawić cel. GPS wymaga zgody i HTTPS. Po naciśnięciu GPS rozpoczyna się śledzenie pozycji i prędkości. W trybie START prędkość i znak są u góry, a na dole godzina przyjazdu, czas i dystans. W 0.27.4 mapa pozostaje północą do góry, ponieważ eksperymentalny obrót powodował ucinanie ekranu na iPhonie. Pasek manewru pokazuje orientacyjną odległość i kierunek kolejnego skrętu oraz podgląd następnego manewru („POTEM”), gdy dane są dostępne na podstawie danych trasowania; nie zastępuje znaków drogowych. Bez aktualnego GPS manewr nie jest śledzony. Po wybraniu „Wyznacz trasę” wybierz „Płatne” lub „Omijaj płatne”. W 0.33 panel pokazuje do trzech rzeczywistych wariantów zwróconych przez serwer, porównuje czas i kilometry. Jeśli serwer znajdzie mniej tras, pokazuje informację zamiast wymyślać trzecią. W 0.31 przycisk ⇄ w trybie START pokazuje pozostałą trasę; ponowne dotknięcie przywraca widok jazdy. Jeśli serwer zwróci więcej wariantów, pojawią się przyciski wyboru trasy i jasne linie alternatywne. Nie zawsze dostępne są dwie lub trzy trasy. Po obliczeniu trasy użyj START, aby schować panel i śledzić pozycję na mapie. Znak przy przycisku Menu pokazuje tylko dostępne, orientacyjne dane OpenStreetMap; znak drogowy ma pierwszeństwo. Przycisk Menu ponownie otwiera panel. Gdy pomiar prędkości jest niedostępny, widoczne są kreski. iOS może wstrzymać GPS po wygaszeniu ekranu lub przejściu do innej aplikacji. Po wyznaczeniu trasy i uruchomieniu GPS dolny panel pokazuje szacunkowe pozostałe kilometry, czas i godzinę przyjazdu. Wartości są obliczane z postępu na zaplanowanej trasie, bez korków. W wersji 0.33 po dwóch wiarygodnych pomiarach GPS wyraźnie poza trasą nawigacja próbuje automatycznie przeliczyć dojazd od bieżącej pozycji z zachowaniem celu i wybranego trybu opłat. Próby są ograniczane czasowo, a spóźniony wynik jest odrzucany, jeśli pojazd zdążył znacznie zmienić pozycję; brak internetu może uniemożliwić przeliczenie. Po zmianie startu przelicz trasę. Stacje paliw są testowo wyszukiwane przez Nominatim (OpenStreetMap); wyniki mogą być niekompletne. W wersji 0.21.10 Blisko szuka do 5 km od GPS, a Szukaj dalej sprawdza odcinki trasy przez kilka serwerów Overpass. Przy całkowitej awarii używa ograniczonego wyszukiwania awaryjnego Nominatim w okolicy celu; nie jest to pełna lista stacji na trasie. W razie błędu wyniki mogą być niepełne. Oba tryby filtrują stacje do 500 m od trasy; dostępność zjazdu, kierunek dojazdu, rzeczywista długość objazdu i otwarcie stacji NIE są jeszcze sprawdzane. Nie wybieraj zjazdu bez sprawdzenia znaków i bezpiecznej trasy. To wersja do testów, nie do prowadzenia podczas jazdy. Tryb „Płatne” używa OSRM i nie filtruje dróg płatnych. Tryb „Omijaj płatne” próbuje wyznaczyć trasę przez usługę Valhalla z opcją exclude_tolls; nie gwarantuje uniknięcia każdej opłaty ani uwzględnienia aktualnych przepisów. Jeżeli usługa jest niedostępna, aplikacja zgłosi błąd zamiast po cichu wyznaczać trasę płatną. Zawsze sprawdź znaki i opłaty. Trasy nie uwzględniają korków.</div>
+<div id="help">Przycisk Diagnostyka pokazuje aktualność GPS, dokładność, kierunek, prędkość i odchylenie od trasy. Przycisk DZIEŃ/NOC zmienia ręcznie jasność i kolory kafelków mapy (motyw jest zapamiętywany w przeglądarce). Wpisz nazwy miejsc lub adresy: pozostają widoczne po wyznaczeniu trasy. Przycisk ★ Ulubione otwiera listę zapisanych celów z opcjami Nawiguj, Usuń i Dodaj obecny cel. W 0.40 wyszukiwanie obejmuje również zagraniczne stacje i pozwala doprecyzować miejscowość przez podanie regionu (np. Grzmiąca 46, okolice Brodnicy). W 0.38 po wybraniu wyniku wyszukiwania mapa pokazuje jego położenie. Potwierdź „To mój cel” albo wybierz „Szukaj ponownie”. Przycisk Głos włącza próbne komunikaty po polsku podczas jazdy. W 0.27.1 dodawanie ulubionego wymaga osobnego podania wyszukiwanego miejsca i etykiety oraz potwierdzenia wyniku; starsze wpisy wymagają ponownego potwierdzenia lokalizacji. Po uruchomieniu GPS pole startu pokazuje „Moja pozycja GPS”, a aktualne współrzędne pozostają wewnętrznymi danymi nawigacji. Możesz też podać współrzędne „szerokość, długość”. Możesz też przytrzymać mapę, aby ustawić cel. GPS wymaga zgody i HTTPS. Po naciśnięciu GPS rozpoczyna się śledzenie pozycji i prędkości. W trybie START prędkość i znak są u góry, a na dole godzina przyjazdu, czas i dystans. W 0.27.4 mapa pozostaje północą do góry, ponieważ eksperymentalny obrót powodował ucinanie ekranu na iPhonie. Pasek manewru pokazuje orientacyjną odległość i kierunek kolejnego skrętu oraz podgląd następnego manewru („POTEM”), gdy dane są dostępne na podstawie danych trasowania; nie zastępuje znaków drogowych. Bez aktualnego GPS manewr nie jest śledzony. Po wybraniu „Wyznacz trasę” wybierz „Płatne” lub „Omijaj płatne”. W 0.33 panel pokazuje do trzech rzeczywistych wariantów zwróconych przez serwer, porównuje czas i kilometry. Jeśli serwer znajdzie mniej tras, pokazuje informację zamiast wymyślać trzecią. W 0.31 przycisk ⇄ w trybie START pokazuje pozostałą trasę; ponowne dotknięcie przywraca widok jazdy. Jeśli serwer zwróci więcej wariantów, pojawią się przyciski wyboru trasy i jasne linie alternatywne. Nie zawsze dostępne są dwie lub trzy trasy. Po obliczeniu trasy użyj START, aby schować panel i śledzić pozycję na mapie. Znak przy przycisku Menu pokazuje tylko dostępne, orientacyjne dane OpenStreetMap; znak drogowy ma pierwszeństwo. Przycisk Menu ponownie otwiera panel. Gdy pomiar prędkości jest niedostępny, widoczne są kreski. iOS może wstrzymać GPS po wygaszeniu ekranu lub przejściu do innej aplikacji. Po wyznaczeniu trasy i uruchomieniu GPS dolny panel pokazuje szacunkowe pozostałe kilometry, czas i godzinę przyjazdu. Wartości są obliczane z postępu na zaplanowanej trasie, bez korków. W wersji 0.33 po dwóch wiarygodnych pomiarach GPS wyraźnie poza trasą nawigacja próbuje automatycznie przeliczyć dojazd od bieżącej pozycji z zachowaniem celu i wybranego trybu opłat. Próby są ograniczane czasowo, a spóźniony wynik jest odrzucany, jeśli pojazd zdążył znacznie zmienić pozycję; brak internetu może uniemożliwić przeliczenie. Po zmianie startu przelicz trasę. Stacje paliw są testowo wyszukiwane przez Nominatim (OpenStreetMap); wyniki mogą być niekompletne. W wersji 0.21.10 Blisko szuka do 5 km od GPS, a Szukaj dalej sprawdza odcinki trasy przez kilka serwerów Overpass. Przy całkowitej awarii używa ograniczonego wyszukiwania awaryjnego Nominatim w okolicy celu; nie jest to pełna lista stacji na trasie. W razie błędu wyniki mogą być niepełne. Oba tryby filtrują stacje do 500 m od trasy; dostępność zjazdu, kierunek dojazdu, rzeczywista długość objazdu i otwarcie stacji NIE są jeszcze sprawdzane. Nie wybieraj zjazdu bez sprawdzenia znaków i bezpiecznej trasy. To wersja do testów, nie do prowadzenia podczas jazdy. Tryb „Płatne” używa OSRM i nie filtruje dróg płatnych. Tryb „Omijaj płatne” próbuje wyznaczyć trasę przez usługę Valhalla z opcją exclude_tolls; nie gwarantuje uniknięcia każdej opłaty ani uwzględnienia aktualnych przepisów. Jeżeli usługa jest niedostępna, aplikacja zgłosi błąd zamiast po cichu wyznaczać trasę płatną. Zawsze sprawdź znaki i opłaty. Trasy nie uwzględniają korków.</div>
 </div>
 <button id="showpanel" class="secondary" aria-label="Otwórz panel" style="display:none">☰ Menu</button><div id="toplimit" aria-label="Orientacyjne ograniczenie prędkości OSM"><span id="limitSign" class="unknown">?</span><div id="topspeed"><strong id="topspeedvalue">—</strong><small>km/h</small></div></div>
 <div id="nextturn" aria-live="off"><span id="turnarrow">↑</span><div id="turndetails"><div id="turndistance">—</div><div id="turnstreet">Oczekiwanie na trasę</div></div><div id="afterturn"><span id="afterarrow">↑</span><div id="afterdetails"><div id="afterlabel">POTEM</div><div id="afterdistance">—</div><div id="afterstreet">—</div></div></div></div>
@@ -308,6 +319,7 @@ body.previewing .panel,body.previewing .bottom,body.previewing #themebtn,body.pr
 <div id="routeDialog" class="modal" style="display:none" role="dialog" aria-modal="true" aria-label="Wybierz trasę">
  <div class="modalcard"><h2>Wybierz trasę</h2><button id="paid">Płatne</button><button id="free" class="secondary">Omijaj płatne</button><button id="cancelMode" class="dark">Anuluj</button></div>
 </div>
+<div id="placePicker" role="dialog" aria-modal="true" aria-label="Wybierz znaleziony adres"><div class="pickcard"><h2 id="pickTitle">Wybierz miejsce</h2><div class="pickhint">Dotknij właściwego adresu. Następnie zobaczysz go na mapie przed zatwierdzeniem.</div><div id="placeList"></div><button id="placeCancel" type="button">Anuluj wyszukiwanie</button></div></div>
 <div id="destinationPreview" role="dialog" aria-label="Potwierdź cel na mapie" aria-modal="false"><div class="preview-title">📍 Czy to właściwy cel?</div><div id="previewAddress" class="preview-address"></div><div class="preview-actions"><button id="previewYes" type="button">✓ To mój cel</button><button id="previewNo" class="secondary" type="button">↩ Szukaj ponownie</button></div></div>
 <div id="mapzoom" aria-label="Powiększenie mapy"><button id="zoomplus" type="button" aria-label="Przybliż mapę">+</button><button id="zoomminus" type="button" aria-label="Oddal mapę">−</button></div>
 <div id="fuelbox"><strong>⛽ Stacje po drodze</strong><div id="fuelitems">Szukam stacji…</div><button class="secondary" id="fuelrefresh">Blisko</button> <button class="secondary" id="fuelfar">Szukaj dalej</button></div>
@@ -744,7 +756,7 @@ function railScore(x,query){
  const match=words.reduce((n,w)=>n+(name.includes(w)?1:0),0);
  return (railway?100:0)+(stationName?15:0)+match*4;
 }
-// 0.39: wiele regionów, doprecyzowanie okolic i stacje zagraniczne.
+// 0.40: wiele regionów, doprecyzowanie okolic i stacje zagraniczne.
 function normalizeSearch(s){return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/ł/g,'l')}
 function searchVariants(raw,rail){
  const base=raw.replace(/\b(PKP|dworzec|stacja kolejowa|railway|kolejowy|kolejowa)\b/gi,'').replace(/\s+/g,' ').trim();
@@ -816,6 +828,28 @@ function previewPlaceOnMap(place){
   $('previewNo').onclick=()=>finish(false);
  });
 }
+function selectPlaceByTouch(query,items){
+ return new Promise((resolve,reject)=>{
+  const modal=$('placePicker'),list=$('placeList'),cancel=$('placeCancel');
+  $('pickTitle').textContent='Wybierz miejsce: '+query;
+  list.replaceChildren();
+  let settled=false;
+  function finish(item){
+   if(settled)return;settled=true;
+   modal.classList.remove('open');cancel.onclick=null;modal.onkeydown=null;
+   list.replaceChildren();
+   if(item)resolve(item);else reject(Error('Anulowano wybór lokalizacji'));
+  }
+  items.forEach((item,i)=>{
+   const b=document.createElement('button');b.type='button';
+   b.textContent=(i+1)+'. '+item.display_name;
+   b.onclick=()=>finish(item);list.appendChild(b);
+  });
+  cancel.onclick=()=>finish(null);
+  modal.onkeydown=e=>{if(e.key==='Escape')finish(null)};
+  modal.classList.add('open');
+ });
+}
 async function choosePlace(query){
  const p=point(query);
  if(p){
@@ -824,12 +858,7 @@ async function choosePlace(query){
   return place;
  }
  const items=await searchPlaces(query);
- const choices=items.map((x,i)=>(i+1)+'. '+x.display_name).join('\n');
- const answer=prompt('WYBIERZ MIEJSCE: '+query+'\n\nWpisz numer wyniku, a pokażę go na mapie:\n'+choices+'\n\nJeśli brak właściwego miejsca, anuluj i dopisz region, np. „okolice Brodnicy” lub „Niemcy”.\nAnuluj = nie wyznaczaj trasy','1');
- if(answer===null)throw Error('Anulowano wybór lokalizacji');
- const n=Number(answer);
- if(!Number.isInteger(n)||n<1||n>items.length)throw Error('Nie wybrano poprawnego numeru miejsca');
- const x=items[n-1];
+ const x=await selectPlaceByTouch(query,items);
  const place={coords:[Number(x.lat),Number(x.lon)],display:x.display_name};
  if(!await previewPlaceOnMap(place))throw Error('Nie potwierdzono lokalizacji. Wpisz adres ponownie lub wskaż punkt na mapie.');
  return place;
