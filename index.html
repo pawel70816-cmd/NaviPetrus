@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#102236"><title>NaviPetrus 0.27.6</title>
+<meta name="theme-color" content="#102236"><title>NaviPetrus 0.28</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#102236;color:#fff}
@@ -216,7 +216,7 @@ body.driving .bottom{max-height:24dvh;overflow:hidden!important}
 #showpanel{max-width:calc(100% - 20px)!important}
 @supports(height:100svh){html,body{height:100svh!important}}
 
-/* 0.27.6 — awaryjny kompaktowy widok Safari: pasek przeglądarki nie zakrywa ETA */
+/* 0.28 — awaryjny kompaktowy widok Safari: pasek przeglądarki nie zakrywa ETA */
 html,body{height:100svh!important;max-height:100svh!important;width:100%!important;max-width:100%!important;overflow:hidden!important}
 body{overscroll-behavior:none!important}
 .panel,.bottom{left:8px!important;right:8px!important;width:calc(100% - 16px)!important;max-width:calc(100% - 16px)!important}
@@ -237,9 +237,16 @@ body.driving #fuelbox{right:8px!important;top:calc(132px + env(safe-area-inset-t
 #showpanel{top:calc(6px + env(safe-area-inset-top,0px))!important}
 #map{height:100%!important;width:100%!important}
 @media(max-height:740px){.bottom{bottom:calc(76px + env(safe-area-inset-bottom,0px))!important}body.driving .bottom{bottom:calc(22px + env(safe-area-inset-bottom,0px))!important}}
+
+/* 0.28 — czytelne akcje wskazanego punktu mapy */
+.map-pick-popup{display:grid;gap:8px;color:#13283b;font:14px system-ui,sans-serif}
+.map-pick-coords{font-size:12px;color:#586a77}
+.map-pick-actions{display:grid;gap:7px}
+.map-pick-actions button{font-size:15px!important;min-height:39px;padding:8px!important;border-radius:9px;white-space:normal}
+.leaflet-popup-content{margin:12px!important}
 </style></head><body><div id="map"></div><button id="themebtn" type="button" aria-label="Zmień motyw mapy">☾ NOC</button><button id="recenter" type="button" title="Wyśrodkuj na GPS i włącz śledzenie" aria-label="Wróć do mojej pozycji GPS">◎</button>
 <div class="panel">
-<h1>🚗 NaviPetrus <small>PROTOTYP 0.27.6 • TEST</small></h1>
+<h1>🚗 NaviPetrus <small>PROTOTYP 0.28 • TEST</small></h1>
 <div class="fields">
 <input id="start" placeholder="Start: adres lub współrzędne" value="Poznań, Polska">
 <button class="secondary" id="gps" title="Ustaw start z GPS">📍 GPS</button>
@@ -1065,6 +1072,41 @@ $('favadd').onclick=async()=>{
   const a=readFavorites();a.push({name:name.trim(),address:found.display,coords:found.coords});writeFavorites(a);renderFavorites();favMessage('Zapisano potwierdzone miejsce.');
  }catch(e){favMessage('Nie zapisano: '+e.message)}finally{button.disabled=false}
 };
-map.on('contextmenu',e=>{$('end').value=e.latlng.lat.toFixed(6)+', '+e.latlng.lng.toFixed(6);status('Cel ustawiony z mapy.')});
+// 0.28 — wskazanie dowolnego punktu na mapie: trasa lub ulubione.
+// Nie geokodujemy ponownie punktu: zapamiętujemy dokładnie wybrane współrzędne.
+let mapPickMarker=null;
+function showMapPick(latlng){
+ if(driving){status('Aby wskazać cel na mapie, najpierw wybierz Menu.');return;}
+ const coords=[latlng.lat,latlng.lng];
+ if(mapPickMarker)map.removeLayer(mapPickMarker);
+ mapPickMarker=L.marker(latlng).addTo(map);
+ const popup=document.createElement('div');
+ popup.className='map-pick-popup';
+ const heading=document.createElement('strong');heading.textContent='Wybrane miejsce na mapie';
+ const location=document.createElement('div');location.className='map-pick-coords';location.textContent=coords.map(v=>v.toFixed(6)).join(', ');
+ const actions=document.createElement('div');actions.className='map-pick-actions';
+ const nav=document.createElement('button');nav.type='button';nav.textContent='➤ Nawiguj';
+ nav.onclick=()=>{
+  const label=coords.map(v=>v.toFixed(6)).join(', ');
+  pinnedDestination={label,coords:[...coords]};$('end').value=label;
+  map.closePopup();$('routeDialog').style.display='flex';
+  status('Cel wybrany z mapy. Wybierz rodzaj trasy.');
+ };
+ const save=document.createElement('button');save.type='button';save.textContent='★ Zapisz do ulubionych';
+ save.onclick=()=>{
+  const name=prompt('Pod jaką nazwą zapisać wybrane miejsce?', 'Mój punkt na mapie');
+  if(name===null)return;
+  if(!name.trim()){status('Podaj nazwę miejsca, aby je zapisać.');return;}
+  try{
+   const a=readFavorites();
+   a.push({name:name.trim(),address:'Punkt wskazany na mapie: '+coords.map(v=>v.toFixed(6)).join(', '),coords:[...coords]});
+   writeFavorites(a);map.closePopup();status('Zapisano w Ulubionych: '+name.trim());
+  }catch(e){status('Nie udało się zapisać miejsca: '+e.message);}
+ };
+ actions.append(nav,save);popup.append(heading,location,actions);
+ mapPickMarker.bindPopup(popup,{maxWidth:290,minWidth:210,autoPan:true}).openPopup();
+}
+map.on('click',e=>showMapPick(e.latlng));
+map.on('contextmenu',e=>showMapPick(e.latlng));
 saved();
 </script></body></html>
