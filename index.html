@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#102236"><title>NaviPetrus 0.35</title>
+<meta name="theme-color" content="#102236"><title>NaviPetrus 0.36</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#102236;color:#fff}
@@ -271,14 +271,14 @@ body:not(.driving) #alternatives button{
  body:not(.driving) .bottom{bottom:calc(8px + env(safe-area-inset-bottom,0px))!important;max-height:45svh!important}
 }
 
-/* 0.35: obrót samej mapy w trybie jazdy, bez zmiany wymiarów dokumentu Safari. */
+/* 0.36: obrót samej mapy w trybie jazdy, bez zmiany wymiarów dokumentu Safari. */
 html,body{overflow:hidden!important;overscroll-behavior:none!important}
 #map{transform:none!important;transform-origin:50% 50%!important;transition:transform .35s linear!important;will-change:transform}
 body.driving.bearing-mode #map{transform:rotate(var(--map-angle,0deg)) scale(1.43)!important;transform-origin:50% 50%!important}
 /* Sterowanie pozostaje poza obracanym #map. */
 </style></head><body><div id="map"></div><button id="themebtn" type="button" aria-label="Zmień motyw mapy">☾ NOC</button><button id="routeview" type="button" title="Pokaż pozostałą trasę" aria-label="Pokaż całą pozostałą trasę" aria-pressed="false">⇄</button><button id="recenter" type="button" title="Wyśrodkuj na GPS i włącz śledzenie" aria-label="Wróć do mojej pozycji GPS">◎</button>
 <div class="panel">
-<h1>🚗 NaviPetrus <small>PROTOTYP 0.35 • TEST</small></h1>
+<h1>🚗 NaviPetrus <small>PROTOTYP 0.36 • TEST</small></h1>
 <div class="fields">
 <input id="start" placeholder="Start: adres lub współrzędne" value="Moja pozycja GPS">
 <button class="secondary" id="gps" title="Ustaw start z GPS">📍 GPS</button>
@@ -796,7 +796,7 @@ async function getRoute(a,b,mode){
    const pts=decodePolyline6(leg.shape),offset=coordinates.length;
    for(const m of (leg.maneuvers||[])){
     if(m.type===4||m.type===5)continue; // koniec odcinka / cel pośredni
-    maneuvers.push({index:offset+Math.max(0,m.begin_shape_index-(offset?1:0)),type:m.type,name:m.street_names?.[0]||m.begin_street_names?.[0]||'',instruction:m.instruction||''});
+    maneuvers.push({index:offset+Math.max(0,m.begin_shape_index-(offset?1:0)),type:m.type,name:m.street_names?.[0]||m.begin_street_names?.[0]||'',instruction:m.instruction||'',roundabout:([26,27].includes(m.type)||/rond|roundabout/i.test(m.instruction||'')),exit:Number.isInteger(m.roundabout_exit_count)?m.roundabout_exit_count:null});
    }
    if(coordinates.length)pts.shift();coordinates.push(...pts);
   }
@@ -807,7 +807,7 @@ async function getRoute(a,b,mode){
   for(const alt of (j.alternates||[])){
    const tr=alt.trip||alt;if(!tr.legs?.length||!tr.summary)continue;
    let cs=[],ms=[];
-   for(const leg of tr.legs){const pts=decodePolyline6(leg.shape),offset=cs.length;for(const m of leg.maneuvers||[])if(m.type!==4&&m.type!==5)ms.push({index:offset+Math.max(0,m.begin_shape_index-(offset?1:0)),type:m.type,name:m.street_names?.[0]||'',instruction:m.instruction||''});if(cs.length)pts.shift();cs.push(...pts);}
+   for(const leg of tr.legs){const pts=decodePolyline6(leg.shape),offset=cs.length;for(const m of leg.maneuvers||[])if(m.type!==4&&m.type!==5)ms.push({index:offset+Math.max(0,m.begin_shape_index-(offset?1:0)),type:m.type,name:m.street_names?.[0]||'',instruction:m.instruction||'',roundabout:([26,27].includes(m.type)||/rond|roundabout/i.test(m.instruction||'')),exit:Number.isInteger(m.roundabout_exit_count)?m.roundabout_exit_count:null});if(cs.length)pts.shift();cs.push(...pts);}
    if(cs.length>1)variants.push({distance:tr.summary.length*1000,duration:tr.summary.time,geometry:{type:'LineString',coordinates:cs},navManeuvers:ms,navProvider:'valhalla'});
   }
   main.choices=variants.slice(0,3);return main;
@@ -820,12 +820,12 @@ async function getRoute(a,b,mode){
  for(const leg of route.legs||[])for(const step of leg.steps||[]){
   const loc=step.maneuver?.location;
   if(!loc)continue;
-  maneuvers.push({coord:[loc[1],loc[0]],type:step.maneuver.type,modifier:step.maneuver.modifier,name:step.name||step.destinations||'',instruction:''});
+  maneuvers.push({coord:[loc[1],loc[0]],type:step.maneuver.type,modifier:step.maneuver.modifier,name:step.name||step.destinations||'',instruction:'',roundabout:['roundabout','rotary'].includes(step.maneuver.type),exit:Number.isInteger(step.maneuver.exit)?step.maneuver.exit:null});
  }
  route.navManeuvers=maneuvers;route.navProvider='osrm';
  const choices=j.routes.slice(0,3);
  for(let i=1;i<choices.length;i++){
-  const ms=[];for(const leg of choices[i].legs||[])for(const step of leg.steps||[]){const loc=step.maneuver?.location;if(loc)ms.push({coord:[loc[1],loc[0]],type:step.maneuver.type,modifier:step.maneuver.modifier,name:step.name||step.destinations||'',instruction:''});}
+  const ms=[];for(const leg of choices[i].legs||[])for(const step of leg.steps||[]){const loc=step.maneuver?.location;if(loc)ms.push({coord:[loc[1],loc[0]],type:step.maneuver.type,modifier:step.maneuver.modifier,name:step.name||step.destinations||'',instruction:'',roundabout:['roundabout','rotary'].includes(step.maneuver.type),exit:Number.isInteger(step.maneuver.exit)?step.maneuver.exit:null});}
   choices[i].navManeuvers=ms;choices[i].navProvider='osrm';
  }
  route.choices=choices;return route;
@@ -914,7 +914,7 @@ function voiceTurn(arrow,distance,street){
  if(key===lastSpokenTurn||Date.now()-lastSpokenAt<18000)return;
  if(stage==='daleko')return;
  lastSpokenTurn=key;lastSpokenAt=Date.now();
- const direction=arrow.includes('↰')||arrow.includes('↖')?'skręć w lewo':arrow.includes('↱')||arrow.includes('↗')?'skręć w prawo':arrow==='↶'?'zawróć':'jedź prosto';
+ const direction=arrow==='↻'?(street.includes('zjazd')?'na rondzie wybierz '+street.split('• ').pop():'wjedź na rondo i kieruj się oznakowaniem'):arrow.includes('↰')||arrow.includes('↖')?'skręć w lewo':arrow.includes('↱')||arrow.includes('↗')?'skręć w prawo':arrow==='↶'?'zawróć':'jedź prosto';
  sayNav((stage==='teraz'?'Teraz ':('Za '+distance+' '))+direction+'.');
 }
 $('voicebtn').onclick=()=>{
@@ -933,9 +933,14 @@ function showAfter(m){
  if(!m)return;
  $('afterarrow').textContent=turnSymbol(m);
  $('afterdistance').textContent='Następny';
- $('afterstreet').textContent=m.name||'manewr';
+ $('afterstreet').textContent=m.roundabout?roundaboutLabel(m):m.name||'manewr';
+}
+function roundaboutLabel(m){
+ if(Number.isInteger(m.exit)&&m.exit>0)return 'Rondo • '+m.exit+'. zjazd';
+ return 'Rondo • kieruj się oznakowaniem';
 }
 function turnSymbol(m){
+ if(m.roundabout)return '↻';
  if(m.modifier){const d=m.modifier;if(d==='uturn')return '↶';if(d.includes('left'))return d.includes('slight')?'↖':'↰';if(d.includes('right'))return d.includes('slight')?'↗':'↱';return '↑';}
  const t=m.type;
  if([1,3,9,11,13].includes(t))return '↱';
@@ -973,7 +978,7 @@ function updateManeuver(){
  if(!next){showTurn('↑','Prosto do celu','Brak kolejnego manewru');return;}
  const remaining=Math.max(0,next.progress-progress);
  const distance=remaining<1000?Math.max(10,Math.round(remaining/10)*10)+' m':(remaining/1000).toFixed(1).replace('.',',')+' km';
- showTurn(turnSymbol(next),distance,next.name?('w '+next.name):'Kolejny manewr');
+ showTurn(turnSymbol(next),distance,next.roundabout?roundaboutLabel(next):(next.name?('w '+next.name):'Kolejny manewr'));
  // Podgląd następnego manewru po aktualnym, bez zgadywania odległości między skrętami.
  if(upcoming.length>1)showAfter(upcoming[1]);
 }
