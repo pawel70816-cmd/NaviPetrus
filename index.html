@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#102236"><title>NaviPetrus 0.28</title>
+<meta name="theme-color" content="#102236"><title>NaviPetrus 0.29</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#102236;color:#fff}
@@ -216,7 +216,7 @@ body.driving .bottom{max-height:24dvh;overflow:hidden!important}
 #showpanel{max-width:calc(100% - 20px)!important}
 @supports(height:100svh){html,body{height:100svh!important}}
 
-/* 0.28 — awaryjny kompaktowy widok Safari: pasek przeglądarki nie zakrywa ETA */
+/* 0.29 — awaryjny kompaktowy widok Safari: pasek przeglądarki nie zakrywa ETA */
 html,body{height:100svh!important;max-height:100svh!important;width:100%!important;max-width:100%!important;overflow:hidden!important}
 body{overscroll-behavior:none!important}
 .panel,.bottom{left:8px!important;right:8px!important;width:calc(100% - 16px)!important;max-width:calc(100% - 16px)!important}
@@ -238,7 +238,7 @@ body.driving #fuelbox{right:8px!important;top:calc(132px + env(safe-area-inset-t
 #map{height:100%!important;width:100%!important}
 @media(max-height:740px){.bottom{bottom:calc(76px + env(safe-area-inset-bottom,0px))!important}body.driving .bottom{bottom:calc(22px + env(safe-area-inset-bottom,0px))!important}}
 
-/* 0.28 — czytelne akcje wskazanego punktu mapy */
+/* 0.29 — czytelne akcje wskazanego punktu mapy */
 .map-pick-popup{display:grid;gap:8px;color:#13283b;font:14px system-ui,sans-serif}
 .map-pick-coords{font-size:12px;color:#586a77}
 .map-pick-actions{display:grid;gap:7px}
@@ -246,7 +246,7 @@ body.driving #fuelbox{right:8px!important;top:calc(132px + env(safe-area-inset-t
 .leaflet-popup-content{margin:12px!important}
 </style></head><body><div id="map"></div><button id="themebtn" type="button" aria-label="Zmień motyw mapy">☾ NOC</button><button id="recenter" type="button" title="Wyśrodkuj na GPS i włącz śledzenie" aria-label="Wróć do mojej pozycji GPS">◎</button>
 <div class="panel">
-<h1>🚗 NaviPetrus <small>PROTOTYP 0.28 • TEST</small></h1>
+<h1>🚗 NaviPetrus <small>PROTOTYP 0.29 • TEST</small></h1>
 <div class="fields">
 <input id="start" placeholder="Start: adres lub współrzędne" value="Poznań, Polska">
 <button class="secondary" id="gps" title="Ustaw start z GPS">📍 GPS</button>
@@ -1072,7 +1072,7 @@ $('favadd').onclick=async()=>{
   const a=readFavorites();a.push({name:name.trim(),address:found.display,coords:found.coords});writeFavorites(a);renderFavorites();favMessage('Zapisano potwierdzone miejsce.');
  }catch(e){favMessage('Nie zapisano: '+e.message)}finally{button.disabled=false}
 };
-// 0.28 — wskazanie dowolnego punktu na mapie: trasa lub ulubione.
+// 0.29 — wskazanie dowolnego punktu na mapie: trasa lub ulubione.
 // Nie geokodujemy ponownie punktu: zapamiętujemy dokładnie wybrane współrzędne.
 let mapPickMarker=null;
 function showMapPick(latlng){
@@ -1109,4 +1109,13 @@ function showMapPick(latlng){
 map.on('click',e=>showMapPick(e.latlng));
 map.on('contextmenu',e=>showMapPick(e.latlng));
 saved();
+// 0.29: uruchom GPS automatycznie po załadowaniu strony.
+// Pierwszy wiarygodny pomiar ustawia środek mapy; ręczny przycisk GPS pozostaje dostępny.
+if(navigator.geolocation){
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',()=>{$('gps').click();},{once:true});
+  }else{
+    $('gps').click();
+  }
+}
 </script></body></html>
