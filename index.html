@@ -320,14 +320,14 @@ body.previewing #camerabtn{display:none}
 .cameraPin{background:#fff;border:2px solid #c83d37;border-radius:50%;font-size:19px;display:flex;align-items:center;justify-content:center;width:30px;height:30px;box-shadow:0 1px 6px #0008}
 
 /* 0.57: sygnalizatory świetlne OSM — tylko punkty zweryfikowane przy trasie. */
-/* 0.57.1: czytelny symbol OSM; odsunięcie wizualne nie zmienia pozycji GPS w danych. */
+/* 0.57.2: czytelny symbol OSM; odsunięcie wizualne nie zmienia pozycji GPS w danych. */
 .trafficLightPin{background:transparent!important;border:0!important;overflow:visible!important;pointer-events:none!important}
-.trafficLightPin .signal-offset{display:block;width:34px;height:72px;transform:translate(25px,-20px);filter:drop-shadow(0 2px 3px #000a)}
+.trafficLightPin .signal-offset{display:block;width:34px;height:72px;transform:translate(0px,0px);filter:drop-shadow(0 2px 3px #000a)}
 .trafficLightPin .signal-housing{box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:space-evenly;width:30px;height:70px;border:2px solid #f0f5fa;border-radius:9px;background:#111922;box-shadow:0 0 0 1px #16202b}
 .trafficLightPin .signal-lamp{display:block;width:16px;height:16px;border-radius:50%;box-shadow:inset 0 -2px 2px #0005}
 .trafficLightPin .signal-red{background:#f04444}.trafficLightPin .signal-amber{background:#f5b942}.trafficLightPin .signal-green{background:#2bd76b}
 /* Obrót mapy nie obraca piktogramu świateł. */
-body.driving.bearing-mode .trafficLightPin .signal-offset{transform:rotate(calc(-1 * var(--map-angle,0deg))) translate(25px,-20px)}
+body.driving.bearing-mode .trafficLightPin .signal-offset{transform:rotate(calc(-1 * var(--map-angle,0deg))) translate(0px,0px)}
 /* 0.46: większa czytelność nazwy ulicy i podglądu kolejnego manewru. */
 body.driving #nextturn #turnstreet{font-size:clamp(14px,3.7vw,17px)!important;font-weight:750;line-height:1.25;color:#fff;white-space:normal;overflow-wrap:anywhere;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;text-overflow:ellipsis}
 body.driving #nextturn #turndistance{font-size:clamp(20px,5.3vw,25px)!important;line-height:1.12}
@@ -340,7 +340,7 @@ body.driving #nextturn{min-height:68px;align-items:center}
 <div id="cameraFeedback" aria-live="polite"><div class="question" id="cameraFeedbackQuestion">📷 Czy fotoradar jest?</div><div class="actions"><button type="button" id="cameraYes">✓ TAK</button><button type="button" id="cameraNo">✕ NIE</button><button type="button" id="cameraMic">🎙️ Odpowiedz</button></div><div class="hint" id="cameraMicHint">Głos: naciśnij mikrofon i powiedz „tak” lub „nie”. Nie obsługuj telefonu podczas jazdy.</div></div>
 <button id="camerabtn" type="button" title="Pokaż fotoradary w okolicy GPS">📷 Radary</button>
 <div class="panel">
-<h1>🚗 NaviPetrus <small>PROTOTYP 0.57.1 • TEST</small></h1>
+<h1>🚗 NaviPetrus <small>PROTOTYP 0.57.2 • TEST</small></h1>
 <div class="fields">
 <input id="start" placeholder="Start: adres lub współrzędne" value="Moja pozycja GPS">
 <button class="secondary" id="gps" title="Ustaw start z GPS">📍 GPS</button>
@@ -732,7 +732,7 @@ function setRouteOverview(on){
   }}
   const pts=activeTrip.points.slice(begin);
   const bounds=L.latLngBounds([...remaining,...pts]);
-  if(bounds.isValid())map.fitBounds(bounds,{paddingTopLeft:[30,155],paddingBottomRight:[30,145],maxZoom:15,animate:true});
+  if(bounds.isValid()){map.stop();map.fitBounds(bounds,{paddingTopLeft:[30,155],paddingBottomRight:[30,145],maxZoom:15,animate:false});}
   status('Widok pozostałej trasy. Naciśnij przycisk ponownie, aby wrócić do jazdy.');
  }else{
   routeOverview=false;followGps=true;
@@ -741,7 +741,7 @@ function setRouteOverview(on){
   $('routeview').textContent='⇄';
   $('routeview').setAttribute('aria-pressed','false');
   $('routeview').setAttribute('aria-label','Pokaż całą pozostałą trasę');
-  if(gpsPoint)map.setView(drivingCameraCenter(),Math.max(map.getZoom(),16),{animate:true});
+  if(gpsPoint){map.stop();map.setView(drivingCameraCenter(),Math.max(map.getZoom(),16),{animate:false});lastCameraPoint=gpsPoint.slice();lastCameraMoveAt=Date.now();}
   status('Widok jazdy. Śledzenie GPS wznowione.');
  }
 }
@@ -755,7 +755,7 @@ $('recenter').onclick=()=>{
  followGps=true;
  $('recenter').classList.remove('manual');
  applyMapBearing();
- map.setView(drivingCameraCenter(),Math.max(map.getZoom(),15),{animate:true});
+ map.stop();map.setView(drivingCameraCenter(),Math.max(map.getZoom(),15),{animate:false});
  status('Mapa wyśrodkowana. Śledzenie pozycji wznowione.');
 };
 let mapBearing=0,hasBearing=false;
@@ -1226,12 +1226,12 @@ async function loadTrafficLights(trip){
  if(!trip||trip.points.length<2)return;
  // Ogranicz zapytanie do maks. 80 km od początku trasy, by nie przeciążać Overpass.
  const maxDistance=Math.min(trip.geometryLength,80000),coords=[];
- for(let d=0;d<=maxDistance;d+=1500)coords.push(fuelPointAt(trip,d));
+ for(let d=0;d<=maxDistance;d+=150)coords.push(fuelPointAt(trip,d));
  coords.push(fuelPointAt(trip,maxDistance));
  const unique=coords.filter((p,i)=>i===0||meters(p,coords[i-1])>10);
  if(unique.length<2)return;
  const poly=unique.map(p=>p[0].toFixed(5)+','+p[1].toFixed(5)).join(',');
- const query='[out:json][timeout:18];node["highway"="traffic_signals"](around:45,'+poly+');out body;';
+ const query='[out:json][timeout:18];node["highway"="traffic_signals"](around:110,'+poly+');out body;';
  const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),18000);
  try{
   const response=await fetch('https://overpass-api.de/api/interpreter',{method:'POST',body:new URLSearchParams({data:query}),signal:ctrl.signal});
@@ -1246,7 +1246,7 @@ async function loadTrafficLights(trip){
    // Filtr geometrii ogranicza punkty z ulic równoległych.
    if(segmentDistance(point,trip.points)>35)continue;
    const signalHtml='<span class="signal-offset" aria-hidden="true"><span class="signal-housing"><span class="signal-lamp signal-red"></span><span class="signal-lamp signal-amber"></span><span class="signal-lamp signal-green"></span></span></span>';
-   const icon=L.divIcon({className:'trafficLightPin',html:signalHtml,iconSize:[0,0],iconAnchor:[0,0]});
+   const icon=L.divIcon({className:'trafficLightPin',html:signalHtml,iconSize:[34,72],iconAnchor:[-18,40]});
    L.marker(point,{icon,interactive:false,keyboard:false,zIndexOffset:900}).addTo(trafficLightsLayer);
   }
  }catch(e){/* niedostępność OSM nie blokuje nawigacji */}
