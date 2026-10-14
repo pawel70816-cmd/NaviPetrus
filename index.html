@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#102236"><title>NaviPetrus 0.55</title>
+<meta name="theme-color" content="#102236"><title>NaviPetrus 0.56</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#102236;color:#fff}
@@ -331,7 +331,7 @@ body.driving #nextturn{min-height:68px;align-items:center}
 <div id="cameraFeedback" aria-live="polite"><div class="question" id="cameraFeedbackQuestion">📷 Czy fotoradar jest?</div><div class="actions"><button type="button" id="cameraYes">✓ TAK</button><button type="button" id="cameraNo">✕ NIE</button><button type="button" id="cameraMic">🎙️ Odpowiedz</button></div><div class="hint" id="cameraMicHint">Głos: naciśnij mikrofon i powiedz „tak” lub „nie”. Nie obsługuj telefonu podczas jazdy.</div></div>
 <button id="camerabtn" type="button" title="Pokaż fotoradary w okolicy GPS">📷 Radary</button>
 <div class="panel">
-<h1>🚗 NaviPetrus <small>PROTOTYP 0.55 • TEST</small></h1>
+<h1>🚗 NaviPetrus <small>PROTOTYP 0.56 • TEST</small></h1>
 <div class="fields">
 <input id="start" placeholder="Start: adres lub współrzędne" value="Moja pozycja GPS">
 <button class="secondary" id="gps" title="Ustaw start z GPS">📍 GPS</button>
@@ -1467,11 +1467,13 @@ async function refreshSpeedLimit(pos,accuracy){
  }catch(e){if(seq===limitSequence)displayLimit(null)}
  finally{clearTimeout(timer)}
 }
-// 0.34: płynny znacznik GPS. Logika tras nadal używa SUROWEGO pomiaru.
+// 0.56: płynniejszy znacznik GPS z adaptacyjnym czasem ruchu.
+// Wygładzanie dotyczy WYŁĄCZNIE ikony, nie pozycji używanej do trasowania.
 let gpsVisualPoint=null,gpsVisualFrame=null,gpsVisualStart=0,gpsVisualFrom=null,gpsVisualTo=null;
+let gpsVisualDuration=650,gpsVisualPreviousFixAt=0;
 function animateGpsMarker(now){
  if(!gpsMarker||!gpsVisualFrom||!gpsVisualTo){gpsVisualFrame=null;return;}
- const t=Math.min(1,(now-gpsVisualStart)/650);
+ const t=Math.min(1,(now-gpsVisualStart)/gpsVisualDuration);
  const eased=t*t*(3-2*t);
  gpsVisualPoint=[gpsVisualFrom[0]+(gpsVisualTo[0]-gpsVisualFrom[0])*eased,gpsVisualFrom[1]+(gpsVisualTo[1]-gpsVisualFrom[1])*eased];
  gpsMarker.setLatLng(gpsVisualPoint);
@@ -1479,6 +1481,9 @@ function animateGpsMarker(now){
  else{gpsVisualFrame=null;gpsVisualPoint=gpsVisualTo.slice();}
 }
 function updateGpsVisual(point,accuracy){
+ const now=Date.now();
+ const interval=gpsVisualPreviousFixAt?now-gpsVisualPreviousFixAt:1000;
+ gpsVisualPreviousFixAt=now;
  if(!gpsMarker){
   gpsVisualPoint=point.slice();
   gpsMarker=L.marker(gpsVisualPoint,{icon:gpsIcon,zIndexOffset:1000}).addTo(map).bindPopup('Twoja pozycja GPS');
@@ -1487,11 +1492,20 @@ function updateGpsVisual(point,accuracy){
  if(gpsVisualFrame!==null){cancelAnimationFrame(gpsVisualFrame);gpsVisualFrame=null;}
  const from=gpsVisualPoint||gpsMarker.getLatLng();
  const start=Array.isArray(from)?from:[from.lat,from.lng];
- // Nie animuj skoków po utracie GPS ani dużych korekt pozycji.
  const distance=map.distance(start,point);
- if(distance>100||Date.now()-lastGpsVisualAt>6000||!Number.isFinite(accuracy)||accuracy>80){
+ const speed=lastGpsCoords?.speed;
+ // Podczas postoju odfiltruj drobne drgania pozycji GPS.
+ // Nie filtruj ich w ruchu, aby nie opóźniać skrętów.
+ if(Number.isFinite(speed)&&speed<0.7&&Number.isFinite(accuracy)&&accuracy<=25&&distance<Math.max(3,Math.min(8,accuracy*0.35))){
+  gpsVisualPoint=start.slice();return;
+ }
+ // Duże skoki, długie przerwy i niedokładny GPS: pokaż pomiar bez animacji.
+ if(distance>100||interval>6000||!Number.isFinite(accuracy)||accuracy>80){
   gpsVisualPoint=point.slice();gpsMarker.setLatLng(gpsVisualPoint);return;
  }
+ if(distance<0.5){gpsVisualPoint=point.slice();gpsMarker.setLatLng(gpsVisualPoint);return;}
+ // Dostosuj animację do częstości pomiarów; nie pozwól na duże opóźnienie.
+ gpsVisualDuration=Math.max(180,Math.min(850,interval*0.7));
  gpsVisualFrom=start.slice();gpsVisualTo=point.slice();gpsVisualStart=performance.now();
  gpsVisualFrame=requestAnimationFrame(animateGpsMarker);
 }
