@@ -274,11 +274,12 @@ body:not(.driving) #alternatives button{
 /* 0.36: obrót samej mapy w trybie jazdy, bez zmiany wymiarów dokumentu Safari. */
 html,body{overflow:hidden!important;overscroll-behavior:none!important}
 #map{transform:none!important;transform-origin:50% 50%!important;transition:transform .35s linear!important;will-change:transform}
-body.driving.bearing-mode #map{transform:rotate(var(--map-angle,0deg)) scale(1.43)!important;transform-origin:50% 50%!important}
+body.driving.bearing-mode #map{transform:rotate(var(--map-angle,0deg)) scale(1.02)!important;transform-origin:50% 50%!important}
 /* 0.52.2: Leaflet musi obliczać kafelki dla większej powierzchni, zanim CSS obróci mapę.
    Sam keepBuffer nie pomaga, gdy kafelki poza granicami widoku nie zostały w ogóle zamówione.
    Rozszerzamy WYŁĄCZNIE mapę w trybie jazdy z obrotem, bez zmiany GPS i logiki tras. */
-body.driving.bearing-mode #map{inset:auto!important;left:-30%!important;top:-30%!important;width:160%!important;height:160%!important}
+body.driving.bearing-mode #map{inset:auto!important;left:-50%!important;top:-50%!important;width:200%!important;height:200%!important}
+body.driving #map{background:#dbe4d4!important}
 /* Sterowanie pozostaje poza obracanym #map. */
 
 /* 0.38: podgląd wybranego celu przed wyznaczeniem trasy */
@@ -340,7 +341,7 @@ body.driving #nextturn{min-height:68px;align-items:center}
 <div id="cameraFeedback" aria-live="polite"><div class="question" id="cameraFeedbackQuestion">📷 Czy fotoradar jest?</div><div class="actions"><button type="button" id="cameraYes">✓ TAK</button><button type="button" id="cameraNo">✕ NIE</button><button type="button" id="cameraMic">🎙️ Odpowiedz</button></div><div class="hint" id="cameraMicHint">Głos: naciśnij mikrofon i powiedz „tak” lub „nie”. Nie obsługuj telefonu podczas jazdy.</div></div>
 <button id="camerabtn" type="button" title="Pokaż fotoradary w okolicy GPS">📷 Radary</button>
 <div class="panel">
-<h1>🚗 NaviPetrus <small>PROTOTYP 0.57.3 • TEST</small></h1>
+<h1>🚗 NaviPetrus <small>PROTOTYP 0.57.4 • TEST</small></h1>
 <div class="fields">
 <input id="start" placeholder="Start: adres lub współrzędne" value="Moja pozycja GPS">
 <button class="secondary" id="gps" title="Ustaw start z GPS">📍 GPS</button>
@@ -780,6 +781,10 @@ function updateBearing(coords){
   mapBearing=((mapBearing+delta*.45)%360+360)%360;
  }
  applyMapBearing();
+ if(driving&&followGps&&!routeOverview&&gpsPoint){
+  map.stop();map.panTo(drivingCameraCenter(),{animate:false});
+  lastCameraPoint=gpsPoint.slice();lastCameraMoveAt=Date.now();
+ }
 }
 function setDriving(on){
  driving=on;
@@ -1252,7 +1257,7 @@ async function loadTrafficLights(trip){
    const icon=L.divIcon({className:'trafficLightPin',html:signalHtml,iconSize:[20,40],iconAnchor:[-12,23]});
    L.marker(point,{icon,interactive:false,keyboard:false,zIndexOffset:900}).addTo(trafficLightsLayer);
   }
- }catch(e){/* niedostępność OSM nie blokuje nawigacji */}
+ }catch(e){console.warn('NaviPetrus: sygnalizatory OSM niedostępne:',e);}
  finally{clearTimeout(timer)}
 }
 function installRoute(t,a,b,mode,stop=null,options={}){
@@ -1566,7 +1571,7 @@ function drivingCameraCenter(){
  const size=map.getSize();
  // Około 16% wysokości ekranu; uwzględnij skalę obrotowego widoku mapy.
  const rotated=hasBearing&&document.body.classList.contains('bearing-mode');
- const shift=size.y*0.16/(rotated?1.43:1);
+ const shift=(window.innerHeight||size.y)*0.16/(rotated?1.02:1);
  const bearing=rotated?mapBearing*Math.PI/180:0;
  const projected=map.project(L.latLng(gpsPoint),map.getZoom());
  return map.unproject(L.point(projected.x+Math.sin(bearing)*shift,projected.y-Math.cos(bearing)*shift),map.getZoom());
