@@ -694,7 +694,7 @@ async function autoReroute(){
   // Zachowaj tryb jazdy; po przeliczeniu nie pokazuj całej trasy.
   installRoute(t,a,b,mode,stop,{keepView:true});
   resetOffRoute();autoRerouteFailures=0;
-  if(followGps&&!routeOverview)map.panTo(gpsPoint,{animate:false});
+  if(followGps&&!routeOverview)map.panTo(drivingCameraCenter(),{animate:false});
   updateManeuver();
   status('Trasa automatycznie przeliczona. Czas bez aktualnych korków.');
  }catch(e){
@@ -732,7 +732,7 @@ function setRouteOverview(on){
   $('routeview').textContent='⇄';
   $('routeview').setAttribute('aria-pressed','false');
   $('routeview').setAttribute('aria-label','Pokaż całą pozostałą trasę');
-  if(gpsPoint)map.setView(gpsPoint,Math.max(map.getZoom(),16),{animate:true});
+  if(gpsPoint)map.setView(drivingCameraCenter(),Math.max(map.getZoom(),16),{animate:true});
   status('Widok jazdy. Śledzenie GPS wznowione.');
  }
 }
@@ -746,7 +746,7 @@ $('recenter').onclick=()=>{
  followGps=true;
  $('recenter').classList.remove('manual');
  applyMapBearing();
- map.setView(gpsPoint,Math.max(map.getZoom(),15),{animate:true});
+ map.setView(drivingCameraCenter(),Math.max(map.getZoom(),15),{animate:true});
  status('Mapa wyśrodkowana. Śledzenie pozycji wznowione.');
 };
 let mapBearing=0,hasBearing=false;
@@ -794,7 +794,7 @@ $('showpanel').onclick=()=>setDriving(false);
 $('drive').onclick=()=>{
  if(!activeTrip)return status('Najpierw wyznacz trasę.');
  if(!gpsPoint){status('Włącz GPS, aby rozpocząć jazdę.');$('gps').click();return;}
- setDriving(true);void activateCamerasAutomatically();map.setView(gpsPoint,Math.max(map.getZoom(),15));lastCameraMoveAt=Date.now();lastCameraPoint=gpsPoint.slice();refreshSpeedLimit(gpsPoint,20);updateManeuver();
+ setDriving(true);void activateCamerasAutomatically();map.setView(drivingCameraCenter(),Math.max(map.getZoom(),15));lastCameraMoveAt=Date.now();lastCameraPoint=gpsPoint.slice();refreshSpeedLimit(gpsPoint,20);updateManeuver();
  status('Tryb jazdy. GPS śledzi pozycję tylko przy aktywnej stronie.');
 };
 $('route').onclick=()=>{$('routeDialog').style.display='flex'};
@@ -1495,6 +1495,19 @@ function updateGpsVisual(point,accuracy){
  gpsVisualFrom=start.slice();gpsVisualTo=point.slice();gpsVisualStart=performance.now();
  gpsVisualFrame=requestAnimationFrame(animateGpsMarker);
 }
+// 0.55: kamera prowadzenia — pozycja GPS niżej, więcej drogi przed kierowcą.
+// Przesunięcie dotyczy wyłącznie automatycznego śledzenia podczas jazdy.
+function drivingCameraCenter(){
+ if(!gpsPoint)return null;
+ if(!driving||!followGps||routeOverview)return gpsPoint;
+ const size=map.getSize();
+ // Około 16% wysokości ekranu; uwzględnij skalę obrotowego widoku mapy.
+ const rotated=hasBearing&&document.body.classList.contains('bearing-mode');
+ const shift=size.y*0.16/(rotated?1.43:1);
+ const bearing=rotated?mapBearing*Math.PI/180:0;
+ const projected=map.project(L.latLng(gpsPoint),map.getZoom());
+ return map.unproject(L.point(projected.x+Math.sin(bearing)*shift,projected.y-Math.cos(bearing)*shift),map.getZoom());
+}
 let lastGpsVisualAt=0;
 // 0.43: kamera GPS nie ściga każdego drobnego drgania odbiornika.
 // Dane pozycji dla trasy i przeliczeń pozostają oryginalnymi pomiarami GPS.
@@ -1504,7 +1517,8 @@ function followGpsCamera(force=false){
  const now=Date.now(),accuracy=lastGpsCoords?.accuracy;
  // Nie przesuwaj mapy na podstawie bardzo niepewnego pomiaru.
  if(!force&&(!Number.isFinite(accuracy)||accuracy>75))return;
- const center=map.getCenter(),centerDistance=meters([center.lat,center.lng],gpsPoint);
+ const target=drivingCameraCenter();
+ const center=map.getCenter(),centerDistance=meters([center.lat,center.lng],[target.lat,target.lng]);
  const moved=lastCameraPoint?meters(lastCameraPoint,gpsPoint):Infinity;
  // Przy postoju: martwa strefa, by mapa nie pływała od szumu GPS.
  const speed=lastGpsCoords?.speed;
@@ -1514,7 +1528,7 @@ function followGpsCamera(force=false){
  // Ograniczenie częstotliwości animacji na iPhonie.
  if(!force&&now-lastCameraMoveAt<(slow?2300:850))return;
  lastCameraMoveAt=now;lastCameraPoint=gpsPoint.slice();
- map.panTo(gpsPoint,{animate:false});
+ map.panTo(target,{animate:false});
 }
 // watchPosition działa tylko podczas dostępności lokalizacji dla strony.
 function updateGps(p){
