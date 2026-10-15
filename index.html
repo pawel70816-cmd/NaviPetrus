@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#102236"><title>NaviPetrus 0.57.14</title>
+<meta name="theme-color" content="#102236"><title>NaviPetrus 0.61</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#102236;color:#fff}
@@ -349,12 +349,23 @@ body.driving #fuelitems .compactFuel .fuelKm{display:block;font-size:11px;margin
 body.driving #fuelitems .fuelEmpty{grid-column:1/-1;pointer-events:none;background:#14283eef;border-radius:9px;padding:8px;font-size:11px}
 /* 0.58: ostrzeżenie pod manewrem, ale poza prawą kolumną stacji. */
 body.driving #cameraWarning{left:10px!important;right:auto!important;width:calc(100vw - min(192px,46vw) - 30px)!important;max-width:calc(100vw - min(192px,46vw) - 30px)!important;padding:9px 7px!important;font-size:clamp(11px,3vw,14px)!important;line-height:1.25!important;overflow-wrap:anywhere;pointer-events:none}
+
+/* 0.61: eksperymentalny tryb HEADING-UP. Powiększamy rzeczywistą
+   powierzchnię Leaflet do 160% w obu osiach, aby kafelki były pobierane
+   również w narożnikach obróconego widoku. Bez scale() na mapie. */
+body.driving.bearing-mode #map{
+ inset:auto!important;left:-30vw!important;top:-30dvh!important;
+ width:160vw!important;height:160dvh!important;
+ transform:rotate(var(--map-angle,0deg))!important;
+ transform-origin:50% 50%!important;
+ transition:transform .35s linear!important;
+}
 </style></head><body><div id="map"></div><button id="themebtn" type="button" aria-label="Zmień motyw mapy">☾ NOC</button><button id="routeview" type="button" title="Pokaż pozostałą trasę" aria-label="Pokaż całą pozostałą trasę" aria-pressed="false">⇄</button><button id="recenter" type="button" title="Wyśrodkuj na GPS i włącz śledzenie" aria-label="Wróć do mojej pozycji GPS">◎</button>
 <div id="cameraWarning" role="status" aria-live="polite"></div>
 <div id="cameraFeedback" aria-live="polite"><div class="question" id="cameraFeedbackQuestion">📷 Czy fotoradar jest?</div><div class="actions"><button type="button" id="cameraYes">✓ TAK</button><button type="button" id="cameraNo">✕ NIE</button></div></div>
 <button id="camerabtn" type="button" title="Pokaż fotoradary w okolicy GPS">📷 Radary</button>
 <div class="panel">
-<h1>🚗 NaviPetrus <small>PROTOTYP 0.60 • TEST</small></h1>
+<h1>🚗 NaviPetrus <small>PROTOTYP 0.61 • TEST</small></h1>
 <div class="fields">
 <input id="start" placeholder="Start: adres lub współrzędne" value="Moja pozycja GPS">
 <button class="secondary" id="gps" title="Ustaw start z GPS">📍 GPS</button>
@@ -777,10 +788,21 @@ $('recenter').onclick=()=>{
 };
 let mapBearing=0,hasBearing=false;
 function applyMapBearing(){
- // 0.57.5: awaryjnie wyłączony obrót mapy na iOS.
- // Leaflet musi mieć rozmiar rzeczywistego ekranu, inaczej GPS ucieka w bok.
- document.body.classList.remove('bearing-mode');
- document.documentElement.style.setProperty('--map-angle','0deg');
+ // 0.61: obracaj tylko podczas automatycznego śledzenia trasy.
+ // Podgląd całej trasy i ręczne przesuwanie pozostają NORTH-UP.
+ const enabled=driving&&followGps&&!routeOverview&&hasBearing;
+ const changed=document.body.classList.contains('bearing-mode')!==enabled;
+ document.body.classList.toggle('bearing-mode',enabled);
+ document.documentElement.style.setProperty('--map-angle',enabled?(-mapBearing).toFixed(1)+'deg':'0deg');
+ if(changed){
+  // Zmiana rozmiaru kontenera musi dotrzeć do Leaflet zanim przeliczymy
+  // pozycję samochodu. Nie przeładowujemy strony ani nie zmieniamy trasy.
+  map.invalidateSize({pan:false,animate:false});
+  if(driving&&followGps&&!routeOverview&&gpsPoint){
+   map.setView(drivingCameraCenter(),map.getZoom(),{animate:false});
+   lastCameraPoint=gpsPoint.slice();lastCameraMoveAt=Date.now();
+  }
+ }
 }
 function updateBearing(coords){
  // iPhone może nie podawać kierunku; przy postoju nie obracamy mapy.
@@ -1724,12 +1746,15 @@ function updateGpsVisual(point,accuracy){
 function drivingCameraCenter(){
  if(!gpsPoint)return null;
  if(!driving||!followGps||routeOverview)return gpsPoint;
- // 0.57.5: stabilna mapa NORTH-UP. Przesuwamy wyłącznie środek Leaflet
- // o 16% wysokości ekranu, bez CSS rotate/scale ani zmiany rozmiaru mapy.
- const size=map.getSize();
- const shift=size.y*0.16;
+ // 0.61: samochód ma być 16% wysokości WIDOCZNEGO ekranu poniżej
+ // środka. Przy obrocie mapy przeliczamy przesunięcie odwrotnym obrotem,
+ // tak by kropka GPS nie odjeżdżała w bok przy zakrętach.
+ const shift=window.innerHeight*0.16;
+ const angle=document.body.classList.contains('bearing-mode')?mapBearing*Math.PI/180:0;
+ const dx=Math.sin(angle)*shift;
+ const dy=Math.cos(angle)*shift;
  const projected=map.project(L.latLng(gpsPoint),map.getZoom());
- return map.unproject(L.point(projected.x,projected.y-shift),map.getZoom());
+ return map.unproject(L.point(projected.x-dx,projected.y-dy),map.getZoom());
 }
 let lastGpsVisualAt=0;
 // 0.43: kamera GPS nie ściga każdego drobnego drgania odbiornika.
