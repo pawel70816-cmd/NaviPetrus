@@ -354,7 +354,7 @@ body.driving #cameraWarning{left:10px!important;right:auto!important;width:calc(
 <div id="cameraFeedback" aria-live="polite"><div class="question" id="cameraFeedbackQuestion">📷 Czy fotoradar jest?</div><div class="actions"><button type="button" id="cameraYes">✓ TAK</button><button type="button" id="cameraNo">✕ NIE</button></div></div>
 <button id="camerabtn" type="button" title="Pokaż fotoradary w okolicy GPS">📷 Radary</button>
 <div class="panel">
-<h1>🚗 NaviPetrus <small>PROTOTYP 0.59 • TEST</small></h1>
+<h1>🚗 NaviPetrus <small>PROTOTYP 0.60 • TEST</small></h1>
 <div class="fields">
 <input id="start" placeholder="Start: adres lub współrzędne" value="Moja pozycja GPS">
 <button class="secondary" id="gps" title="Ustaw start z GPS">📍 GPS</button>
@@ -439,8 +439,31 @@ window.addEventListener('online',()=>setTimeout(refreshMapAfterReturn,250));
 document.addEventListener('visibilitychange',()=>{
  if(!document.hidden){setTimeout(refreshMapAfterReturn,250);setTimeout(()=>refreshCameraMarkers(true),300);}
 });
-$('zoomplus').onclick=()=>map.zoomIn();
-$('zoomminus').onclick=()=>map.zoomOut();
+// 0.60: ręczny zoom wyznacza poziom, do którego wracamy po manewrze.
+let driveBaseZoom=16,autoTurnZoom=false,autoTurnKey=null;
+$('zoomplus').onclick=()=>{if(driving){driveBaseZoom=Math.min(19,(autoTurnZoom?driveBaseZoom:map.getZoom())+1);autoTurnZoom=false;autoTurnKey=null;}map.zoomIn();};
+$('zoomminus').onclick=()=>{if(driving){driveBaseZoom=Math.max(3,(autoTurnZoom?driveBaseZoom:map.getZoom())-1);autoTurnZoom=false;autoTurnKey=null;}map.zoomOut();};
+function resetTurnZoom(){
+ if(autoTurnZoom&&driving&&followGps&&!routeOverview)map.setZoom(driveBaseZoom,{animate:false});
+ autoTurnZoom=false;autoTurnKey=null;
+}
+function updateTurnZoom(next,remaining){
+ if(!driving||!followGps||routeOverview||!gpsPoint||!Number.isFinite(remaining)){return;}
+ const accuracy=lastGpsCoords?.accuracy;
+ if(!Number.isFinite(accuracy)||accuracy>35)return;
+ // Nie przybliżaj manewrów typu 'prosto' ani początku/końca trasy.
+ const type=String(next?.type??'').toLowerCase();
+ const isStraight=['depart','arrive','continue','new name','notification'].includes(type)||next?.modifier==='straight'||[1,2,3,4,5,6,7,8].includes(next?.type);
+ if(isStraight){resetTurnZoom();return;}
+ const key=String(next.progress)+'|'+String(next.type);
+ // 450 m: delikatny zoom, 180 m: bliższy podgląd.
+ const desired=remaining<=180?Math.max(driveBaseZoom,18):remaining<=450?Math.max(driveBaseZoom,17):driveBaseZoom;
+ if(desired===driveBaseZoom){resetTurnZoom();return;}
+ if(!autoTurnZoom){autoTurnKey=key;autoTurnZoom=true;}
+ if(autoTurnKey!==key){autoTurnKey=key;}
+ if(map.getZoom()!==desired)map.setZoom(desired,{animate:false});
+}
+
 
 let selectedFuelStop=null,lastRouteMode=null;
 let routeOptions=[],alternativeLines=[],routeStart=null,routeEnd=null,routeMode=null;
@@ -776,6 +799,8 @@ function updateBearing(coords){
  }
 }
 function setDriving(on){
+ if(!on)resetTurnZoom();
+ if(on&&!driving){driveBaseZoom=DRIVING_ZOOM;autoTurnZoom=false;autoTurnKey=null;}
  driving=on;
  routeOverview=false;
  $('routeview').classList.remove('overview');
@@ -802,7 +827,7 @@ function restoreDrivingView(){
  if(!gpsPoint)return;
  map.stop();
  map.invalidateSize({pan:false,animate:false});
- map.setView(drivingCameraCenter(),DRIVING_ZOOM,{animate:false});
+ map.setView(drivingCameraCenter(),driveBaseZoom,{animate:false});
  lastCameraPoint=gpsPoint.slice();lastCameraMoveAt=Date.now();
 }
 function beginDrivingWithGps(){
@@ -880,7 +905,7 @@ function updateTrip(){
  $('remaintime').textContent=durationLabel(duration);
  $('arrival').textContent=new Date(Date.now()+duration*1000).toLocaleTimeString('pl-PL',{hour:'2-digit',minute:'2-digit'});
 }
-function clearTrip(){clearTrafficLights();$('cameraWarning').classList.remove('visible');hideCameraFeedback();cameraFeedbackAsked.clear();cameraWarned.clear();resetOffRoute();routeOptions=[];$('alternatives').classList.remove('active');$('alternatives').replaceChildren();selectedFuelStop=null;navTrack=null;showAfter(null);showTurn("↑","—","Oczekiwanie na trasę");fuelRequest++;fuelAutoTrip=null;fuelAutoProgress=-Infinity;fuelAutoAttempt=0;fuelMarkers.forEach(m=>map.removeLayer(m));fuelMarkers=[];$('fuelbox').classList.remove('active');activeTrip=null;$('tripbar').classList.remove('active')}
+function clearTrip(){resetTurnZoom();clearTrafficLights();$('cameraWarning').classList.remove('visible');hideCameraFeedback();cameraFeedbackAsked.clear();cameraWarned.clear();resetOffRoute();routeOptions=[];$('alternatives').classList.remove('active');$('alternatives').replaceChildren();selectedFuelStop=null;navTrack=null;showAfter(null);showTurn("↑","—","Oczekiwanie na trasę");fuelRequest++;fuelAutoTrip=null;fuelAutoProgress=-Infinity;fuelAutoAttempt=0;fuelMarkers.forEach(m=>map.removeLayer(m));fuelMarkers=[];$('fuelbox').classList.remove('active');activeTrip=null;$('tripbar').classList.remove('active')}
 // 0.5: punkty amenity=fuel z OSM, bez punktów wyłącznie ładowania EV.
 // To przybliżenie bliskości trasy, NIE potwierdzenie dostępnego zjazdu.
 function distanceToPolyline(pos,trip){
@@ -1568,17 +1593,18 @@ function trackedProgress(near){
 }
 function updateManeuver(){
  showAfter(null);
- if(!activeTrip){showTurn('↑','—','Brak trasy');return;}
- if(!gpsPoint||Date.now()-lastGpsTime>20000){showTurn('↑','GPS','Oczekiwanie na pozycję');return;}
+ if(!activeTrip){resetTurnZoom();showTurn('↑','—','Brak trasy');return;}
+ if(!gpsPoint||Date.now()-lastGpsTime>20000){resetTurnZoom();showTurn('↑','GPS','Oczekiwanie na pozycję');return;}
  const near=nearestOnRoute(gpsPoint,activeTrip);
- if(near.error>100){showTurn('⚠','Poza trasą','Przelicz trasę');return;}
+ if(near.error>100){resetTurnZoom();showTurn('⚠','Poza trasą','Przelicz trasę');return;}
  const progress=trackedProgress(near);
  // Gdy jesteśmy przy skrzyżowaniu, zachowaj manewr aż do minięcia go
  // o 20 m; następnie automatycznie pokaż kolejny.
  const upcoming=activeTrip.maneuvers.filter(m=>m.progress>progress-20&&m.progress<activeTrip.geometryLength-10);
  const next=upcoming[0];
- if(!next){showTurn('↑','Prosto do celu','Brak kolejnego manewru');return;}
+ if(!next){resetTurnZoom();showTurn('↑','Prosto do celu','Brak kolejnego manewru');return;}
  const remaining=Math.max(0,next.progress-progress);
+ updateTurnZoom(next,remaining);
  const distance=remaining<1000?Math.max(10,Math.round(remaining/10)*10)+' m':(remaining/1000).toFixed(1).replace('.',',')+' km';
  showTurn(turnSymbol(next),distance,maneuverLabel(next));
  // Podgląd następnego manewru po aktualnym, bez zgadywania odległości między skrętami.
