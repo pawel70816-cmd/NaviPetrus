@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#102236"><title>NaviPetrus 0.61</title>
+<meta name="theme-color" content="#102236"><title>NaviPetrus 0.63</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#102236;color:#fff}
@@ -353,19 +353,13 @@ body.driving #cameraWarning{left:10px!important;right:auto!important;width:calc(
 /* 0.61: eksperymentalny tryb HEADING-UP. Powiększamy rzeczywistą
    powierzchnię Leaflet do 160% w obu osiach, aby kafelki były pobierane
    również w narożnikach obróconego widoku. Bez scale() na mapie. */
-body.driving.bearing-mode #map{
- inset:auto!important;left:-30vw!important;top:-30dvh!important;
- width:160vw!important;height:160dvh!important;
- transform:rotate(var(--map-angle,0deg))!important;
- transform-origin:50% 50%!important;
- transition:transform .35s linear!important;
-}
+body.driving.bearing-mode #map{transform:none!important;inset:0!important;width:100%!important;height:100%!important;transition:none!important;}
 </style></head><body><div id="map"></div><button id="themebtn" type="button" aria-label="Zmień motyw mapy">☾ NOC</button><button id="routeview" type="button" title="Pokaż pozostałą trasę" aria-label="Pokaż całą pozostałą trasę" aria-pressed="false">⇄</button><button id="recenter" type="button" title="Wyśrodkuj na GPS i włącz śledzenie" aria-label="Wróć do mojej pozycji GPS">◎</button>
 <div id="cameraWarning" role="status" aria-live="polite"></div>
 <div id="cameraFeedback" aria-live="polite"><div class="question" id="cameraFeedbackQuestion">📷 Czy fotoradar jest?</div><div class="actions"><button type="button" id="cameraYes">✓ TAK</button><button type="button" id="cameraNo">✕ NIE</button></div></div>
 <button id="camerabtn" type="button" title="Pokaż fotoradary w okolicy GPS">📷 Radary</button>
 <div class="panel">
-<h1>🚗 NaviPetrus <small>PROTOTYP 0.61 • TEST</small></h1>
+<h1>🚗 NaviPetrus <small>PROTOTYP 0.63 • TEST</small></h1>
 <div class="fields">
 <input id="start" placeholder="Start: adres lub współrzędne" value="Moja pozycja GPS">
 <button class="secondary" id="gps" title="Ustaw start z GPS">📍 GPS</button>
@@ -787,38 +781,14 @@ $('recenter').onclick=()=>{
  status('Mapa wyśrodkowana. Śledzenie pozycji wznowione.');
 };
 let mapBearing=0,hasBearing=false;
+// 0.62: wyłączony wadliwy obrót kontenera Leaflet. Stabilny widok NORTH-UP.
+// Kierunek GPS zostaje w danych, ale nie obraca elementu #map.
 function applyMapBearing(){
- // 0.61: obracaj tylko podczas automatycznego śledzenia trasy.
- // Podgląd całej trasy i ręczne przesuwanie pozostają NORTH-UP.
- const enabled=driving&&followGps&&!routeOverview&&hasBearing;
- const changed=document.body.classList.contains('bearing-mode')!==enabled;
- document.body.classList.toggle('bearing-mode',enabled);
- document.documentElement.style.setProperty('--map-angle',enabled?(-mapBearing).toFixed(1)+'deg':'0deg');
- if(changed){
-  // Zmiana rozmiaru kontenera musi dotrzeć do Leaflet zanim przeliczymy
-  // pozycję samochodu. Nie przeładowujemy strony ani nie zmieniamy trasy.
-  map.invalidateSize({pan:false,animate:false});
-  if(driving&&followGps&&!routeOverview&&gpsPoint){
-   map.setView(drivingCameraCenter(),map.getZoom(),{animate:false});
-   lastCameraPoint=gpsPoint.slice();lastCameraMoveAt=Date.now();
-  }
- }
+ document.body.classList.remove('bearing-mode');
+ document.documentElement.style.setProperty('--map-angle','0deg');
 }
 function updateBearing(coords){
- // iPhone może nie podawać kierunku; przy postoju nie obracamy mapy.
- if(!driving||!Number.isFinite(coords.heading)||!Number.isFinite(coords.speed)||coords.speed<2.5)return;
- const next=((coords.heading%360)+360)%360;
- if(!hasBearing){mapBearing=next;hasBearing=true;}
- else{
-  const delta=((next-mapBearing+540)%360)-180;
-  // Odrzuć gwałtowny pojedynczy skok kierunku GPS.
-  if(Math.abs(delta)>100)return;
-  mapBearing=((mapBearing+delta*.45)%360+360)%360;
- }
- applyMapBearing();
- if(driving&&followGps&&!routeOverview&&gpsPoint){
-  followGpsCamera();
- }
+ // 0.62: bez obracania mapy do czasu wdrożenia obrotu warstwowego.
 }
 function setDriving(on){
  if(!on)resetTurnZoom();
@@ -1071,7 +1041,8 @@ async function refreshFuelOnRoute(force=false){
    try{const response=await fetch(host,{method:'POST',body:new URLSearchParams({data:query}),signal:ctrl.signal});if(!response.ok)throw Error('HTTP '+response.status);const data=await response.json();if(!Array.isArray(data.elements))throw Error('brak danych');elements=data.elements;break;}
    catch(e){}finally{clearTimeout(timer)}
   }
-  if(!elements||request!==fuelRequest||trip!==activeTrip)return;
+  if(request!==fuelRequest||trip!==activeTrip)return;
+  if(!elements){$('fuelitems').textContent='⛽ Serwer stacji nie odpowiada. Spróbuję ponownie automatycznie.';return;}
   const seen=new Set(),rawStations=[];
   for(const el of elements){
    const lat=Number(el.lat??el.center?.lat),lon=Number(el.lon??el.center?.lon);
@@ -1085,10 +1056,11 @@ async function refreshFuelOnRoute(force=false){
   // 0.59: weryfikujemy rzeczywisty dojazd PRZED pokazaniem przycisku.
   // W przypadku błędu serwera nie oferujemy stacji jako sprawdzonej.
   const start=(gpsPoint&&Date.now()-lastGpsTime<30000)?gpsPoint:trip.points[0];
-  const candidates=rawStations.slice(0,10);
+  const candidates=rawStations.slice(0,6);
+  $('fuelitems').textContent=candidates.length?'⛽ Sprawdzam dojazd do '+candidates.length+' stacji…':'⛽ Brak stacji w pobranych danych na najbliższych 25 km.';
   const checks=await Promise.all(candidates.map(async st=>{
    try{
-    const route=await getRoute(start,[st.lat,st.lon],lastRouteMode);
+    const route=await Promise.race([getRoute(start,[st.lat,st.lon],lastRouteMode),new Promise((_,reject)=>setTimeout(()=>reject(Error('Limit czasu weryfikacji')),6500))]);
     const road=Number(route.distance),along=Math.max(0,st.ahead);
     if(!Number.isFinite(road)||road>Math.max(along+2500,along*1.35+900))return null;
     return {...st,roadDistance:road};
@@ -1096,6 +1068,7 @@ async function refreshFuelOnRoute(force=false){
   }));
   if(request!==fuelRequest||trip!==activeTrip)return;
   const stations=checks.filter(Boolean);
+  if(!stations.length){$('fuelitems').textContent=rawStations.length?'⛽ Nie udało się potwierdzić dojazdu do stacji. Ponowię wyszukiwanie.':'⛽ Brak stacji w pobranych danych na najbliższych 25 km.';}
   stations.sort((a,b)=>a.ahead-b.ahead);
   // Sukces, nawet gdy serwer nie znalazł stacji. Stare wyniki zastępujemy dopiero teraz.
   fuelMarkers.forEach(m=>map.removeLayer(m));fuelMarkers=[];
@@ -1105,8 +1078,8 @@ async function refreshFuelOnRoute(force=false){
    marker.bindPopup('⛽ '+st.name.replaceAll('&','&amp;').replaceAll('<','&lt;')+'<br>Za ok. '+(st.ahead/1000).toFixed(1)+' km wzdłuż trasy<br>Dojazd i zjazd niezweryfikowane');fuelMarkers.push(marker);
   }
   fuelAutoTrip=trip;fuelAutoProgress=progress;
-  renderCompactFuel();
- }finally{fuelAutoBusy=false;}
+  if(stations.length)renderCompactFuel();
+ }catch(e){if(request===fuelRequest&&trip===activeTrip)$('fuelitems').textContent='⛽ Błąd wyszukiwania stacji. Ponowię próbę.';}finally{fuelAutoBusy=false;}
 }
 // 0.26: w czasie jazdy tylko trzy najbliższe, jeszcze nieminięte stacje.
 function renderCompactFuel(){
@@ -1750,7 +1723,7 @@ function drivingCameraCenter(){
  // środka. Przy obrocie mapy przeliczamy przesunięcie odwrotnym obrotem,
  // tak by kropka GPS nie odjeżdżała w bok przy zakrętach.
  const shift=window.innerHeight*0.16;
- const angle=document.body.classList.contains('bearing-mode')?mapBearing*Math.PI/180:0;
+ const angle=0; // 0.62: kamera nie kompensuje nieaktywnego obrotu
  const dx=Math.sin(angle)*shift;
  const dy=Math.cos(angle)*shift;
  const projected=map.project(L.latLng(gpsPoint),map.getZoom());
