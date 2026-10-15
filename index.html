@@ -342,10 +342,10 @@ body.driving #nextturn{min-height:68px;align-items:center}
 /* 0.57.14: większe, dotykowe kafelki stacji w widoku jazdy. */
 body.driving #fuelbox{width:min(192px,46vw)!important;max-width:min(192px,46vw)!important;padding:6px!important;background:transparent!important;box-shadow:none!important;pointer-events:none}
 body.driving #fuelbox>strong,body.driving #fuelbox>#fuelrefresh,body.driving #fuelbox>#fuelfar{display:none!important}
-body.driving #fuelitems{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:0!important}
-body.driving #fuelitems .compactFuel{pointer-events:auto;display:flex!important;flex-direction:column;justify-content:center;align-items:center;min-width:0;width:100%;min-height:68px!important;aspect-ratio:1.12/1;padding:8px 4px!important;margin:0!important;border:1px solid #ffffff55!important;border-radius:13px!important;background:#14283eef!important;color:white!important;font-size:12px!important;font-weight:750;line-height:1.2;box-shadow:0 3px 10px #0006;text-align:center;white-space:normal;overflow-wrap:anywhere;touch-action:manipulation}
-body.driving #fuelitems .compactFuel .fuelBrand{display:block;max-width:100%;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-body.driving #fuelitems .compactFuel .fuelKm{display:block;font-size:12px;margin-top:4px;white-space:nowrap}
+body.driving #fuelitems{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin:0!important}
+body.driving #fuelitems .compactFuel{pointer-events:auto;display:flex!important;flex-direction:column;justify-content:center;align-items:center;min-width:0;width:100%;min-height:55px!important;aspect-ratio:1.35/1;padding:6px 4px!important;margin:0!important;border:1px solid #ffffff55!important;border-radius:13px!important;background:#14283eef!important;color:white!important;font-size:12px!important;font-weight:750;line-height:1.2;box-shadow:0 3px 10px #0006;text-align:center;white-space:normal;overflow-wrap:anywhere;touch-action:manipulation}
+body.driving #fuelitems .compactFuel .fuelBrand{display:block;max-width:100%;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+body.driving #fuelitems .compactFuel .fuelKm{display:block;font-size:11px;margin-top:3px;white-space:nowrap}
 body.driving #fuelitems .fuelEmpty{grid-column:1/-1;pointer-events:none;background:#14283eef;border-radius:9px;padding:8px;font-size:11px}
 /* 0.58: ostrzeżenie pod manewrem, ale poza prawą kolumną stacji. */
 body.driving #cameraWarning{left:10px!important;right:auto!important;width:calc(100vw - min(192px,46vw) - 30px)!important;max-width:calc(100vw - min(192px,46vw) - 30px)!important;padding:9px 7px!important;font-size:clamp(11px,3vw,14px)!important;line-height:1.25!important;overflow-wrap:anywhere;pointer-events:none}
@@ -354,7 +354,7 @@ body.driving #cameraWarning{left:10px!important;right:auto!important;width:calc(
 <div id="cameraFeedback" aria-live="polite"><div class="question" id="cameraFeedbackQuestion">📷 Czy fotoradar jest?</div><div class="actions"><button type="button" id="cameraYes">✓ TAK</button><button type="button" id="cameraNo">✕ NIE</button></div></div>
 <button id="camerabtn" type="button" title="Pokaż fotoradary w okolicy GPS">📷 Radary</button>
 <div class="panel">
-<h1>🚗 NaviPetrus <small>PROTOTYP 0.58 • TEST</small></h1>
+<h1>🚗 NaviPetrus <small>PROTOTYP 0.59 • TEST</small></h1>
 <div class="fields">
 <input id="start" placeholder="Start: adres lub współrzędne" value="Moja pozycja GPS">
 <button class="secondary" id="gps" title="Ustaw start z GPS">📍 GPS</button>
@@ -1025,15 +1025,30 @@ async function refreshFuelOnRoute(force=false){
    catch(e){}finally{clearTimeout(timer)}
   }
   if(!elements||request!==fuelRequest||trip!==activeTrip)return;
-  const seen=new Set(),stations=[];
+  const seen=new Set(),rawStations=[];
   for(const el of elements){
    const lat=Number(el.lat??el.center?.lat),lon=Number(el.lon??el.center?.lon);
    if(!Number.isFinite(lat)||!Number.isFinite(lon))continue;
-   const key=lat.toFixed(4)+','+lon.toFixed(4);if(seen.has(key))continue;seen.add(key);
+   const key=lat.toFixed(3)+','+lon.toFixed(3);if(seen.has(key))continue;seen.add(key);
    const near=nearestOnRoute([lat,lon],trip),ahead=near.progress-progress;
    if(near.error>500||ahead< -100||ahead>26000)continue;
-   stations.push({lat,lon,name:el.tags?.name||el.tags?.brand||el.tags?.operator||'Stacja paliw',ahead,offset:near.error});
+   rawStations.push({lat,lon,name:el.tags?.name||el.tags?.brand||el.tags?.operator||'Stacja paliw',ahead,offset:near.error});
   }
+  rawStations.sort((a,b)=>a.ahead-b.ahead);
+  // 0.59: weryfikujemy rzeczywisty dojazd PRZED pokazaniem przycisku.
+  // W przypadku błędu serwera nie oferujemy stacji jako sprawdzonej.
+  const start=(gpsPoint&&Date.now()-lastGpsTime<30000)?gpsPoint:trip.points[0];
+  const candidates=rawStations.slice(0,10);
+  const checks=await Promise.all(candidates.map(async st=>{
+   try{
+    const route=await getRoute(start,[st.lat,st.lon],lastRouteMode);
+    const road=Number(route.distance),along=Math.max(0,st.ahead);
+    if(!Number.isFinite(road)||road>Math.max(along+2500,along*1.35+900))return null;
+    return {...st,roadDistance:road};
+   }catch(e){return null;}
+  }));
+  if(request!==fuelRequest||trip!==activeTrip)return;
+  const stations=checks.filter(Boolean);
   stations.sort((a,b)=>a.ahead-b.ahead);
   // Sukces, nawet gdy serwer nie znalazł stacji. Stare wyniki zastępujemy dopiero teraz.
   fuelMarkers.forEach(m=>map.removeLayer(m));fuelMarkers=[];
