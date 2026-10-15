@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#102236"><title>NaviPetrus 0.63</title>
+<meta name="theme-color" content="#102236"><title>NaviPetrus 0.64</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#102236;color:#fff}
@@ -359,7 +359,7 @@ body.driving.bearing-mode #map{transform:none!important;inset:0!important;width:
 <div id="cameraFeedback" aria-live="polite"><div class="question" id="cameraFeedbackQuestion">📷 Czy fotoradar jest?</div><div class="actions"><button type="button" id="cameraYes">✓ TAK</button><button type="button" id="cameraNo">✕ NIE</button></div></div>
 <button id="camerabtn" type="button" title="Pokaż fotoradary w okolicy GPS">📷 Radary</button>
 <div class="panel">
-<h1>🚗 NaviPetrus <small>PROTOTYP 0.63 • TEST</small></h1>
+<h1>🚗 NaviPetrus <small>PROTOTYP 0.64 • TEST</small></h1>
 <div class="fields">
 <input id="start" placeholder="Start: adres lub współrzędne" value="Moja pozycja GPS">
 <button class="secondary" id="gps" title="Ustaw start z GPS">📍 GPS</button>
@@ -1036,13 +1036,13 @@ async function refreshFuelOnRoute(force=false){
   const poly=unique.map(p=>p[0].toFixed(5)+','+p[1].toFixed(5)).join(',');
   const query='[out:json][timeout:12];(nwr["amenity"="fuel"](around:650,'+poly+'););out center;';
   let elements=null;
-  for(const host of ['https://overpass-api.de/api/interpreter','https://overpass.private.coffee/api/interpreter']){
+  for(const host of ['https://overpass-api.de/api/interpreter','https://overpass.private.coffee/api/interpreter','https://overpass.kumi.systems/api/interpreter']){
    const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),11000);
    try{const response=await fetch(host,{method:'POST',body:new URLSearchParams({data:query}),signal:ctrl.signal});if(!response.ok)throw Error('HTTP '+response.status);const data=await response.json();if(!Array.isArray(data.elements))throw Error('brak danych');elements=data.elements;break;}
    catch(e){}finally{clearTimeout(timer)}
   }
   if(request!==fuelRequest||trip!==activeTrip)return;
-  if(!elements){$('fuelitems').textContent='⛽ Serwer stacji nie odpowiada. Spróbuję ponownie automatycznie.';return;}
+  if(!elements){if(fuelCandidates.length){renderCompactFuel();}else{$('fuelitems').textContent='⛽ Serwery danych stacji chwilowo niedostępne. Ponowię próbę.';}return;}
   const seen=new Set(),rawStations=[];
   for(const el of elements){
    const lat=Number(el.lat??el.center?.lat),lon=Number(el.lon??el.center?.lon);
@@ -1056,19 +1056,19 @@ async function refreshFuelOnRoute(force=false){
   // 0.59: weryfikujemy rzeczywisty dojazd PRZED pokazaniem przycisku.
   // W przypadku błędu serwera nie oferujemy stacji jako sprawdzonej.
   const start=(gpsPoint&&Date.now()-lastGpsTime<30000)?gpsPoint:trip.points[0];
-  const candidates=rawStations.slice(0,6);
+  const candidates=rawStations.slice(0,4);
   $('fuelitems').textContent=candidates.length?'⛽ Sprawdzam dojazd do '+candidates.length+' stacji…':'⛽ Brak stacji w pobranych danych na najbliższych 25 km.';
   const checks=await Promise.all(candidates.map(async st=>{
    try{
     const route=await Promise.race([getRoute(start,[st.lat,st.lon],lastRouteMode),new Promise((_,reject)=>setTimeout(()=>reject(Error('Limit czasu weryfikacji')),6500))]);
     const road=Number(route.distance),along=Math.max(0,st.ahead);
-    if(!Number.isFinite(road)||road>Math.max(along+2500,along*1.35+900))return null;
+    if(!Number.isFinite(road)||road>Math.max(along+4500,along*1.8+1500))return null;
     return {...st,roadDistance:road};
    }catch(e){return null;}
   }));
   if(request!==fuelRequest||trip!==activeTrip)return;
   const stations=checks.filter(Boolean);
-  if(!stations.length){$('fuelitems').textContent=rawStations.length?'⛽ Nie udało się potwierdzić dojazdu do stacji. Ponowię wyszukiwanie.':'⛽ Brak stacji w pobranych danych na najbliższych 25 km.';}
+  if(!stations.length){if(fuelCandidates.length){renderCompactFuel();return;}$('fuelitems').textContent=rawStations.length?'⛽ Nie udało się potwierdzić dojazdu. Ponowię wyszukiwanie.':'⛽ Brak stacji w pobranych danych na najbliższych 25 km.';return;}
   stations.sort((a,b)=>a.ahead-b.ahead);
   // Sukces, nawet gdy serwer nie znalazł stacji. Stare wyniki zastępujemy dopiero teraz.
   fuelMarkers.forEach(m=>map.removeLayer(m));fuelMarkers=[];
@@ -1079,7 +1079,7 @@ async function refreshFuelOnRoute(force=false){
   }
   fuelAutoTrip=trip;fuelAutoProgress=progress;
   if(stations.length)renderCompactFuel();
- }catch(e){if(request===fuelRequest&&trip===activeTrip)$('fuelitems').textContent='⛽ Błąd wyszukiwania stacji. Ponowię próbę.';}finally{fuelAutoBusy=false;}
+ }catch(e){if(request===fuelRequest&&trip===activeTrip){if(fuelCandidates.length)renderCompactFuel();else $('fuelitems').textContent='⛽ Błąd wyszukiwania stacji. Ponowię próbę.';}}finally{fuelAutoBusy=false;}
 }
 // 0.26: w czasie jazdy tylko trzy najbliższe, jeszcze nieminięte stacje.
 function renderCompactFuel(){
