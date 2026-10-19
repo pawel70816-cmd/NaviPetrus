@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#102236"><title>NaviPetrus 0.68</title>
+<meta name="theme-color" content="#102236"><title>NaviPetrus 0.69</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#102236;color:#fff}
@@ -389,7 +389,7 @@ body.driving.bearing-mode #map{transform:none!important;inset:0!important;width:
 <div id="destinationPreview" role="dialog" aria-label="Potwierdź cel na mapie" aria-modal="false"><div class="preview-title">📍 Czy to właściwy cel?</div><div id="previewAddress" class="preview-address"></div><div class="preview-actions"><button id="previewYes" type="button">✓ To mój cel</button><button id="previewNo" class="secondary" type="button">↩ Szukaj ponownie</button></div></div>
 <div id="mapzoom" aria-label="Powiększenie mapy"><button id="zoomplus" type="button" aria-label="Przybliż mapę">+</button><button id="zoomminus" type="button" aria-label="Oddal mapę">−</button></div>
 <div id="fuelbox"><strong>⛽ Stacje po drodze</strong><div id="fuelitems">Szukam stacji…</div><button class="secondary" id="fuelrefresh">Blisko</button> <button class="secondary" id="fuelfar">Szukaj dalej</button></div>
-<section id="diagpanel" aria-label="Diagnostyka nawigacji"><div class="diaghead"><strong>🛠 Diagnostyka NaviPetrus</strong><button id="diagclose" type="button">Zamknij</button></div><div id="diagrows">Oczekiwanie na dane…</div><div id="labcontrols"><strong>📦 Czarna skrzynka 0.68</strong><div id="labstatus">Zapis wyłączony</div><button id="labstart" type="button">● Rozpocznij zapis</button><button id="labstop" type="button">■ Zatrzymaj</button><button id="labexport" type="button">⬇ Eksport JSON</button><button id="labclear" type="button">Usuń zapis</button><div class="hint">Zapis lokalny, zawiera dokładne pozycje GPS. Nie udostępniaj bez sprawdzenia. iOS może wstrzymać zapis w tle. Limit 6000 zdarzeń.</div></div><div class="hint">Dane są odświeżane lokalnie. Po odświeżeniu strony pomiary GPS i trasa rozpoczynają się od nowa.</div></section><div class="bottom"><div id="speedbar"><div><span id="speedvalue">—</span> <span id="speedunit">km/h</span></div><div id="gpsstate">GPS nieuruchomiony</div></div><div id="tripbar"><div class="tripitem"><small>PRZYJAZD</small><b id="arrival">—</b></div><div class="tripitem"><small>POZOSTAŁO</small><b id="remaintime">—</b></div><div class="tripitem"><small>DO CELU</small><b id="remainkm">—</b></div></div><div id="result">Gotowe do wyznaczenia trasy</div><div id="status">Mapa i trasy wymagają internetu.</div><div id="alternatives" aria-label="Wybór trasy alternatywnej"></div></div>
+<section id="diagpanel" aria-label="Diagnostyka nawigacji"><div class="diaghead"><strong>🛠 Diagnostyka NaviPetrus</strong><button id="diagclose" type="button">Zamknij</button></div><div id="diagrows">Oczekiwanie na dane…</div><div id="labcontrols"><strong>📦 Czarna skrzynka 0.69</strong><div id="labstatus">Zapis wyłączony</div><button id="labstart" type="button">● Rozpocznij zapis</button><button id="labstop" type="button">■ Zatrzymaj</button><button id="labexport" type="button">⬇ Eksport JSON</button><button id="labclear" type="button">Usuń zapis</button><div class="hint">Zapis lokalny, zawiera dokładne pozycje GPS. Nie udostępniaj bez sprawdzenia. iOS może wstrzymać zapis w tle. Limit 6000 zdarzeń.</div></div><div class="hint">Dane są odświeżane lokalnie. Po odświeżeniu strony pomiary GPS i trasa rozpoczynają się od nowa.</div></section><div class="bottom"><div id="speedbar"><div><span id="speedvalue">—</span> <span id="speedunit">km/h</span></div><div id="gpsstate">GPS nieuruchomiony</div></div><div id="tripbar"><div class="tripitem"><small>PRZYJAZD</small><b id="arrival">—</b></div><div class="tripitem"><small>POZOSTAŁO</small><b id="remaintime">—</b></div><div class="tripitem"><small>DO CELU</small><b id="remainkm">—</b></div></div><div id="result">Gotowe do wyznaczenia trasy</div><div id="status">Mapa i trasy wymagają internetu.</div><div id="alternatives" aria-label="Wybór trasy alternatywnej"></div></div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <div id="offrouteAlert" role="alert" aria-live="polite">⚠️ Zjechano z wyznaczonej trasy. Sprawdź drogę.</div>
 <script>
@@ -1622,9 +1622,19 @@ function limitStillValid(pos,accuracy){
   Date.now()-limitConfirmedAt<90000&&
   segmentDistance(pos,limitConfirmedGeometry)<=Math.max(15,Math.min(25,accuracy+8));
 }
+// 0.69: diagnostyka przyczyny zmiany ograniczenia (bez zmiany algorytmu).
+let limitDebugReason='nieustalone',limitDebugAccuracy=null;
 function displayLimit(value){
- const sign=$('limitSign');sign.textContent=value??'?';
+ const sign=$('limitSign');
+ const before=sign.textContent.trim();
+ const after=String(value??'?');
+ sign.textContent=after;
  sign.classList.toggle('unknown',value===null);
+ if(before!==after){
+  const point=gpsPoint;
+  const nearby=point&&limitRoadCache.length?limitRoadCache.map(e=>segmentDistance(point,e.geometry)).filter(Number.isFinite).sort((a,b)=>a-b)[0]:null;
+  labRecord('limit_decision',{from:before,to:after,reason:limitDebugReason,accuracyM:limitDebugAccuracy,cacheWays:limitRoadCache.length,cacheAgeS:limitRoadCacheAt?Math.round((Date.now()-limitRoadCacheAt)/1000):null,nearestCachedWayM:Number.isFinite(nearby)?Math.round(nearby):null,requestInFlight:limitRequestInFlight,retryRemainingS:Math.max(0,Math.ceil((limitRetryAfter-Date.now())/1000))});
+ }
 }
 function parseMaxspeed(raw){
  if(!raw||typeof raw!=='string')return null;
@@ -1657,15 +1667,16 @@ function limitFromCache(pos,accuracy){
  return best;
 }
 async function refreshSpeedLimit(pos,accuracy){
- if(!Number.isFinite(accuracy)||accuracy>35){displayLimit(null);return;}
+ limitDebugAccuracy=accuracy;
+ if(!Number.isFinite(accuracy)||accuracy>35){limitDebugReason='gps_accuracy_over_35m';displayLimit(null);return;}
  const now=Date.now();
  // Przede wszystkim szukaj limitu w już pobranych odcinkach, również bez internetu.
  const cached=limitFromCache(pos,accuracy);
  if(cached){
   limitConfirmed=cached.speed;limitConfirmedAt=now;limitConfirmedGeometry=cached.geometry;
-  displayLimit(cached.speed);
- }else if(limitStillValid(pos,accuracy))displayLimit(limitConfirmed);
- else{limitConfirmed=null;limitConfirmedGeometry=null;displayLimit(null);}
+  limitDebugReason='cache_match';displayLimit(cached.speed);
+ }else if(limitStillValid(pos,accuracy)){limitDebugReason='previous_segment_still_valid';displayLimit(limitConfirmed);}
+ else{limitDebugReason='no_unambiguous_road_match';limitConfirmed=null;limitConfirmedGeometry=null;displayLimit(null);}
  if(limitRequestInFlight||now<limitRetryAfter)return;
  // Nowy fragment drogi: pobierz wcześniej dane z promienia 250 m.
  // Po znalezieniu limitu nie odpytuj serwera przy każdym pomiarze GPS.
@@ -1688,10 +1699,12 @@ async function refreshSpeedLimit(pos,accuracy){
   fresh.forEach(e=>merged.set(e.id,e));
   limitRoadCache=Array.from(merged.values()).slice(-500);limitRoadCacheAt=Date.now();
   const best=limitFromCache(gpsPoint||pos,accuracy);
-  if(best){limitConfirmed=best.speed;limitConfirmedAt=Date.now();limitConfirmedGeometry=best.geometry;displayLimit(best.speed);}
-  else if(!limitStillValid(gpsPoint||pos,accuracy)){limitConfirmed=null;limitConfirmedGeometry=null;displayLimit(null);}
+  labRecord('limit_fetch',{result:'ok',ways:fresh.length,cacheWays:limitRoadCache.length,matched:!!best});
+  if(best){limitConfirmed=best.speed;limitConfirmedAt=Date.now();limitConfirmedGeometry=best.geometry;limitDebugReason='fresh_osm_match';displayLimit(best.speed);}
+  else if(!limitStillValid(gpsPoint||pos,accuracy)){limitDebugReason='fresh_osm_no_match';limitConfirmed=null;limitConfirmedGeometry=null;displayLimit(null);}
  }catch(e){
   limitRetryAfter=Date.now()+90000;
+  labRecord('limit_fetch',{result:'error',error:String(e?.name||e).slice(0,80),retrySeconds:90});
   // Awaria serwera nie usuwa już pobranych danych OSM.
  }finally{clearTimeout(timer);limitRequestInFlight=false;}
 }
@@ -2098,12 +2111,12 @@ async function labInit(){
  try{labTotal=(await labReadAll()).length;labWarn5500=labTotal>=5500;labWarn5800=labTotal>=5800;labState()}catch(e){labState('Pamięć niedostępna: '+e.message)}
 }
 document.getElementById('labstart').onclick=async()=>{
- try{await labOpen();labSession=new Date().toISOString().replace(/[:.]/g,'-');labEnabled=true;labRecord('start',{version:'0.68',online:navigator.onLine,userAgent:navigator.userAgent});await labFlush();labState()}
+ try{await labOpen();labSession=new Date().toISOString().replace(/[:.]/g,'-');labEnabled=true;labRecord('start',{version:'0.69',online:navigator.onLine,userAgent:navigator.userAgent});await labFlush();labState()}
  catch(e){labState('Nie można uruchomić: '+e.message)}
 };
 document.getElementById('labstop').onclick=async()=>{labRecord('stop');labEnabled=false;await labFlush();labState()};
 document.getElementById('labexport').onclick=async()=>{
- try{const entries=await labReadAll();const payload={app:'NaviPetrus',version:'0.68',exportedAt:new Date().toISOString(),privacy:'Zawiera historię GPS — dane wrażliwe',events:entries};
+ try{const entries=await labReadAll();const payload={app:'NaviPetrus',version:'0.69',exportedAt:new Date().toISOString(),privacy:'Zawiera historię GPS — dane wrażliwe',events:entries};
  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
  const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='NaviPetrus_LAB_'+new Date().toISOString().slice(0,10)+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),10000);labState('Wyeksportowano '+entries.length)}catch(e){labState('Eksport nieudany: '+e.message)}
 };
