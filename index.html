@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#102236"><title>NaviPetrus 0.67</title>
+<meta name="theme-color" content="#102236"><title>NaviPetrus 0.68</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#102236;color:#fff}
@@ -389,7 +389,7 @@ body.driving.bearing-mode #map{transform:none!important;inset:0!important;width:
 <div id="destinationPreview" role="dialog" aria-label="Potwierdź cel na mapie" aria-modal="false"><div class="preview-title">📍 Czy to właściwy cel?</div><div id="previewAddress" class="preview-address"></div><div class="preview-actions"><button id="previewYes" type="button">✓ To mój cel</button><button id="previewNo" class="secondary" type="button">↩ Szukaj ponownie</button></div></div>
 <div id="mapzoom" aria-label="Powiększenie mapy"><button id="zoomplus" type="button" aria-label="Przybliż mapę">+</button><button id="zoomminus" type="button" aria-label="Oddal mapę">−</button></div>
 <div id="fuelbox"><strong>⛽ Stacje po drodze</strong><div id="fuelitems">Szukam stacji…</div><button class="secondary" id="fuelrefresh">Blisko</button> <button class="secondary" id="fuelfar">Szukaj dalej</button></div>
-<section id="diagpanel" aria-label="Diagnostyka nawigacji"><div class="diaghead"><strong>🛠 Diagnostyka NaviPetrus</strong><button id="diagclose" type="button">Zamknij</button></div><div id="diagrows">Oczekiwanie na dane…</div><div id="labcontrols"><strong>📦 Czarna skrzynka 0.67</strong><div id="labstatus">Zapis wyłączony</div><button id="labstart" type="button">● Rozpocznij zapis</button><button id="labstop" type="button">■ Zatrzymaj</button><button id="labexport" type="button">⬇ Eksport JSON</button><button id="labclear" type="button">Usuń zapis</button><div class="hint">Zapis lokalny, zawiera dokładne pozycje GPS. Nie udostępniaj bez sprawdzenia. iOS może wstrzymać zapis w tle. Limit 6000 zdarzeń.</div></div><div class="hint">Dane są odświeżane lokalnie. Po odświeżeniu strony pomiary GPS i trasa rozpoczynają się od nowa.</div></section><div class="bottom"><div id="speedbar"><div><span id="speedvalue">—</span> <span id="speedunit">km/h</span></div><div id="gpsstate">GPS nieuruchomiony</div></div><div id="tripbar"><div class="tripitem"><small>PRZYJAZD</small><b id="arrival">—</b></div><div class="tripitem"><small>POZOSTAŁO</small><b id="remaintime">—</b></div><div class="tripitem"><small>DO CELU</small><b id="remainkm">—</b></div></div><div id="result">Gotowe do wyznaczenia trasy</div><div id="status">Mapa i trasy wymagają internetu.</div><div id="alternatives" aria-label="Wybór trasy alternatywnej"></div></div>
+<section id="diagpanel" aria-label="Diagnostyka nawigacji"><div class="diaghead"><strong>🛠 Diagnostyka NaviPetrus</strong><button id="diagclose" type="button">Zamknij</button></div><div id="diagrows">Oczekiwanie na dane…</div><div id="labcontrols"><strong>📦 Czarna skrzynka 0.68</strong><div id="labstatus">Zapis wyłączony</div><button id="labstart" type="button">● Rozpocznij zapis</button><button id="labstop" type="button">■ Zatrzymaj</button><button id="labexport" type="button">⬇ Eksport JSON</button><button id="labclear" type="button">Usuń zapis</button><div class="hint">Zapis lokalny, zawiera dokładne pozycje GPS. Nie udostępniaj bez sprawdzenia. iOS może wstrzymać zapis w tle. Limit 6000 zdarzeń.</div></div><div class="hint">Dane są odświeżane lokalnie. Po odświeżeniu strony pomiary GPS i trasa rozpoczynają się od nowa.</div></section><div class="bottom"><div id="speedbar"><div><span id="speedvalue">—</span> <span id="speedunit">km/h</span></div><div id="gpsstate">GPS nieuruchomiony</div></div><div id="tripbar"><div class="tripitem"><small>PRZYJAZD</small><b id="arrival">—</b></div><div class="tripitem"><small>POZOSTAŁO</small><b id="remaintime">—</b></div><div class="tripitem"><small>DO CELU</small><b id="remainkm">—</b></div></div><div id="result">Gotowe do wyznaczenia trasy</div><div id="status">Mapa i trasy wymagają internetu.</div><div id="alternatives" aria-label="Wybór trasy alternatywnej"></div></div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <div id="offrouteAlert" role="alert" aria-live="polite">⚠️ Zjechano z wyznaczonej trasy. Sprawdź drogę.</div>
 <script>
@@ -2017,6 +2017,17 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden){if(gpsWat
 // Zapis jest domyślnie wyłączony; baza IndexedDB utrzymuje dane po odświeżeniu.
 const LAB_DB='navipetrus_lab_065',LAB_LIMIT=6000;
 let labEnabled=false,labDbPromise=null,labPending=[],labWriting=false,labLastGps=0,labTotal=0,labSession=null;
+let labWarn5500=false,labWarn5800=false;
+function labCapacityWarning(){
+ const n=labTotal+labPending.length;
+ const threshold=n>=5800?5800:n>=5500?5500:0;
+ if(!labEnabled||!threshold||(threshold===5500&&labWarn5500)||(threshold===5800&&labWarn5800))return;
+ if(threshold===5500)labWarn5500=true;else{labWarn5500=true;labWarn5800=true;}
+ const message=threshold===5500?'Czarna skrzynka: pięć tysięcy pięćset zdarzeń. Zapisz dziennik na najbliższym bezpiecznym postoju.':'Uwaga. Czarna skrzynka prawie pełna. Zapisz dziennik na najbliższym bezpiecznym postoju.';
+ labState('⚠️ Prawie pełna — eksportuj na postoju');
+ if(canSpeak&&voiceEnabled&&!document.hidden){try{const u=new SpeechSynthesisUtterance(message);u.lang='pl-PL';u.rate=0.92;const pl=speechSynthesis.getVoices().find(v=>v.lang.toLowerCase().startsWith('pl'));if(pl)u.voice=pl;speechSynthesis.speak(u)}catch(e){}}
+}
+
 function labOpen(){
  if(!('indexedDB' in window))return Promise.reject(Error('IndexedDB niedostępne'));
  if(!labDbPromise)labDbPromise=new Promise((resolve,reject)=>{
@@ -2032,6 +2043,7 @@ function labState(note=''){
 function labRecord(type,data={}){
  if(!labEnabled)return;
  labPending.push({at:new Date().toISOString(),session:labSession,type,data});
+ labCapacityWarning();
  if(labPending.length>=20)void labFlush();
 }
 async function labFlush(){
@@ -2041,7 +2053,7 @@ async function labFlush(){
  try{const db=await labOpen();await new Promise((resolve,reject)=>{
   const tx=db.transaction('events','readwrite'),store=tx.objectStore('events');
   batch.forEach(item=>store.add(item));tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);
- });labTotal+=batch.length;labState();
+ });labTotal+=batch.length;labState();labCapacityWarning();
  // Przycina najstarsze wpisy, bez nieograniczonego wzrostu pamięci.
  if(labTotal>LAB_LIMIT){await new Promise((resolve,reject)=>{
   const tx=db.transaction('events','readwrite'),s=tx.objectStore('events');let excess=labTotal-LAB_LIMIT;
@@ -2083,21 +2095,21 @@ window.fetch=async function(input,init){
  catch(e){labRecord('http_error',{endpoint,error:String(e.name||e),ms:Date.now()-started});throw e}
 };
 async function labInit(){
- try{labTotal=(await labReadAll()).length;labState()}catch(e){labState('Pamięć niedostępna: '+e.message)}
+ try{labTotal=(await labReadAll()).length;labWarn5500=labTotal>=5500;labWarn5800=labTotal>=5800;labState()}catch(e){labState('Pamięć niedostępna: '+e.message)}
 }
 document.getElementById('labstart').onclick=async()=>{
- try{await labOpen();labSession=new Date().toISOString().replace(/[:.]/g,'-');labEnabled=true;labRecord('start',{version:'0.67',online:navigator.onLine,userAgent:navigator.userAgent});await labFlush();labState()}
+ try{await labOpen();labSession=new Date().toISOString().replace(/[:.]/g,'-');labEnabled=true;labRecord('start',{version:'0.68',online:navigator.onLine,userAgent:navigator.userAgent});await labFlush();labState()}
  catch(e){labState('Nie można uruchomić: '+e.message)}
 };
 document.getElementById('labstop').onclick=async()=>{labRecord('stop');labEnabled=false;await labFlush();labState()};
 document.getElementById('labexport').onclick=async()=>{
- try{const entries=await labReadAll();const payload={app:'NaviPetrus',version:'0.67',exportedAt:new Date().toISOString(),privacy:'Zawiera historię GPS — dane wrażliwe',events:entries};
+ try{const entries=await labReadAll();const payload={app:'NaviPetrus',version:'0.68',exportedAt:new Date().toISOString(),privacy:'Zawiera historię GPS — dane wrażliwe',events:entries};
  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
  const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='NaviPetrus_LAB_'+new Date().toISOString().slice(0,10)+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),10000);labState('Wyeksportowano '+entries.length)}catch(e){labState('Eksport nieudany: '+e.message)}
 };
 document.getElementById('labclear').onclick=async()=>{
  if(!confirm('Usunąć CAŁĄ zapisaną diagnostykę GPS z tego telefonu?'))return;
- labEnabled=false;labPending=[];try{const db=await labOpen();await new Promise((resolve,reject)=>{const tx=db.transaction('events','readwrite');tx.objectStore('events').clear();tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)});labTotal=0;labSession=null;labState('Usunięto')}catch(e){labState('Błąd: '+e.message)}
+ labEnabled=false;labPending=[];try{const db=await labOpen();await new Promise((resolve,reject)=>{const tx=db.transaction('events','readwrite');tx.objectStore('events').clear();tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)});labTotal=0;labSession=null;labWarn5500=false;labWarn5800=false;labState('Usunięto')}catch(e){labState('Błąd: '+e.message)}
 };
 setInterval(()=>{if(labEnabled)void labFlush()},5000);
 window.addEventListener('pagehide',()=>{if(labEnabled){labRecord('pagehide');void labFlush()}});
