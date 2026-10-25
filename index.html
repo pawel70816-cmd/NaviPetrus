@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#102236"><title>NaviPetrus 0.74</title>
+<meta name="theme-color" content="#102236"><title>NaviPetrus 0.75</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#102236;color:#fff}
@@ -364,7 +364,7 @@ body.driving.bearing-mode #map{transform:none!important;inset:0!important;width:
 <div id="cameraFeedback" aria-live="polite"><div class="question" id="cameraFeedbackQuestion">📷 Czy fotoradar jest?</div><div class="actions"><button type="button" id="cameraYes">✓ TAK</button><button type="button" id="cameraNo">✕ NIE</button></div></div>
 <button id="camerabtn" type="button" title="Pokaż fotoradary w okolicy GPS">📷 Radary</button>
 <div class="panel">
-<h1>🚗 NaviPetrus <small>PROTOTYP 0.74 • TEST</small></h1>
+<h1>🚗 NaviPetrus <small>PROTOTYP 0.75 • TEST</small></h1>
 <div class="fields">
 <input id="start" placeholder="Start: adres lub współrzędne" value="Moja pozycja GPS">
 <button class="secondary" id="gps" title="Ustaw start z GPS">📍 GPS</button>
@@ -1699,15 +1699,28 @@ async function refreshSpeedLimit(pos,accuracy){
     const url=endpoint+'?'+new URLSearchParams({data:query}).toString();
     const response=await fetch(url,{method:'GET',signal:serverCtrl.signal});
     if(!response.ok)throw Error('Overpass HTTP '+response.status);
-    data=await response.json();
-    labRecord('limit_server',{result:'ok',endpoint,transport:'GET'});
+    const candidate=await response.json();
+    const usable=Array.isArray(candidate?.elements)?candidate.elements.filter(e=>e.type==='way'&&Array.isArray(e.geometry)&&e.geometry.length>1&&parseMaxspeed(e.tags?.maxspeed)!==null).length:0;
+    if(!usable){
+     labRecord('limit_server',{result:'empty',endpoint,transport:'GET',ways:0});
+     continue;
+    }
+    data=candidate;
+    labRecord('limit_server',{result:'ok',endpoint,transport:'GET',ways:usable});
     break;
    }catch(err){
     lastFetchError=err;
     labRecord('limit_server',{result:'error',endpoint,transport:'GET',error:String(err?.message||err?.name||err).slice(0,100)});
    }finally{clearTimeout(serverTimer);}
   }
-  if(!data)throw lastFetchError||Error('Overpass niedostępny');
+  if(!data){
+   // Odpowiedź HTTP 200 bez odcinków maxspeed nie oznacza udanego pobrania.
+   // Zachowaj dotychczasowy cache i zapisz osobny wynik diagnostyczny.
+   if(lastFetchError)throw lastFetchError;
+   labRecord('limit_fetch',{result:'empty',ways:0,cacheWays:limitRoadCache.length,matched:false});
+   limitRetryAfter=Date.now()+90000;
+   return;
+  }
   if(seq!==limitSequence)return;
   const fresh=(data.elements||[]).filter(e=>e.type==='way'&&Array.isArray(e.geometry)&&e.geometry.length>1)
    .map(e=>({id:e.id,speed:parseMaxspeed(e.tags?.maxspeed),geometry:e.geometry.map(p=>[p.lat,p.lon])}))
@@ -2150,12 +2163,12 @@ async function labInit(){
  try{labTotal=(await labReadAll()).length;labWarn5500=labTotal>=5500;labWarn5800=labTotal>=5800;labState()}catch(e){labState('Pamięć niedostępna: '+e.message)}
 }
 document.getElementById('labstart').onclick=async()=>{
- try{await labOpen();labSession=new Date().toISOString().replace(/[:.]/g,'-');labEnabled=true;labRecord('start',{version:'0.73',online:navigator.onLine,userAgent:navigator.userAgent});await labFlush();labState()}
+ try{await labOpen();labSession=new Date().toISOString().replace(/[:.]/g,'-');labEnabled=true;labRecord('start',{version:'0.75',online:navigator.onLine,userAgent:navigator.userAgent});await labFlush();labState()}
  catch(e){labState('Nie można uruchomić: '+e.message)}
 };
 document.getElementById('labstop').onclick=async()=>{labRecord('stop');labEnabled=false;await labFlush();labState()};
 document.getElementById('labexport').onclick=async()=>{
- try{const entries=await labReadAll();const payload={app:'NaviPetrus',version:'0.73',exportedAt:new Date().toISOString(),privacy:'Zawiera historię GPS — dane wrażliwe',events:entries};
+ try{const entries=await labReadAll();const payload={app:'NaviPetrus',version:'0.75',exportedAt:new Date().toISOString(),privacy:'Zawiera historię GPS — dane wrażliwe',events:entries};
  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
  const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='NaviPetrus_LAB_'+new Date().toISOString().slice(0,10)+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),10000);labState('Wyeksportowano '+entries.length)}catch(e){labState('Eksport nieudany: '+e.message)}
 };
