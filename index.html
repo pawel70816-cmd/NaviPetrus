@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#102236"><title>NaviPetrus 0.75</title>
+<meta name="theme-color" content="#102236"><title>NaviPetrus 0.76</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#102236;color:#fff}
@@ -364,7 +364,7 @@ body.driving.bearing-mode #map{transform:none!important;inset:0!important;width:
 <div id="cameraFeedback" aria-live="polite"><div class="question" id="cameraFeedbackQuestion">📷 Czy fotoradar jest?</div><div class="actions"><button type="button" id="cameraYes">✓ TAK</button><button type="button" id="cameraNo">✕ NIE</button></div></div>
 <button id="camerabtn" type="button" title="Pokaż fotoradary w okolicy GPS">📷 Radary</button>
 <div class="panel">
-<h1>🚗 NaviPetrus <small>PROTOTYP 0.75 • TEST</small></h1>
+<h1>🚗 NaviPetrus <small>PROTOTYP 0.76 • TEST</small></h1>
 <div class="fields">
 <input id="start" placeholder="Start: adres lub współrzędne" value="Moja pozycja GPS">
 <button class="secondary" id="gps" title="Ustaw start z GPS">📍 GPS</button>
@@ -1666,78 +1666,61 @@ function limitFromCache(pos,accuracy){
  if(!best||candidates.some(c=>c.distance-best.distance<12&&c.speed!==best.speed))return null;
  return best;
 }
+// 0.76 — LAB Valhalla: Overpass maxspeed wyłączony; paliwo i światła bez zmian.
+// Nie zgaduj ograniczeń: bez jednoznacznego dopasowania zwracamy "?".
+let valhallaTrace=[],valhallaBusy=false,valhallaLastRequest=0;
+let valhallaKnown=null,valhallaKnownAt=0,valhallaKnownPoint=null;
+const VALHALLA_LIMIT_URL='https://valhalla1.openstreetmap.de/trace_attributes';
+function valhallaCollect(pos,accuracy){
+ if(!Number.isFinite(accuracy)||accuracy>35)return;
+ const last=valhallaTrace[valhallaTrace.length-1];
+ if(last&&meters(pos,[last.lat,last.lon])<12)return;
+ if(last&&meters(pos,[last.lat,last.lon])>250){valhallaTrace=[];valhallaKnown=null;}
+ valhallaTrace.push({lat:pos[0],lon:pos[1],time:Math.round(Date.now()/1000),gps_accuracy:Math.max(3,Math.round(accuracy))});
+ if(valhallaTrace.length>9)valhallaTrace.shift();
+}
 async function refreshSpeedLimit(pos,accuracy){
  limitDebugAccuracy=accuracy;
- if(!Number.isFinite(accuracy)||accuracy>35){limitDebugReason='gps_accuracy_over_35m';displayLimit(null);return;}
+ valhallaCollect(pos,accuracy);
+ if(!Number.isFinite(accuracy)||accuracy>35){
+  limitDebugReason='valhalla_gps_accuracy';displayLimit(null);return;
+ }
  const now=Date.now();
- // Przede wszystkim szukaj limitu w już pobranych odcinkach, również bez internetu.
- const cached=limitFromCache(pos,accuracy);
- if(cached){
-  limitConfirmed=cached.speed;limitConfirmedAt=now;limitConfirmedGeometry=cached.geometry;
-  limitDebugReason='cache_match';displayLimit(cached.speed);
- }else if(limitStillValid(pos,accuracy)){limitDebugReason='previous_segment_still_valid';displayLimit(limitConfirmed);}
- else{limitDebugReason='no_unambiguous_road_match';limitConfirmed=null;limitConfirmedGeometry=null;displayLimit(null);}
- if(limitRequestInFlight||now<limitRetryAfter)return;
- // Nowy fragment drogi: pobierz wcześniej dane z promienia 250 m.
- // Po znalezieniu limitu nie odpytuj serwera przy każdym pomiarze GPS.
- if(limitLastPoint&&meters(pos,limitLastPoint)<180&&now-limitLastTime<45000)return;
- limitLastPoint=[...pos];limitLastTime=now;
- const seq=++limitSequence;
- limitRequestInFlight=true;
- const query=`[out:json][timeout:12];way(around:250,${pos[0]},${pos[1]})["highway"]["maxspeed"];out geom;`;
+ // Utrzymujemy potwierdzony limit jedynie przy ciągłości śladu, nie bez końca.
+ if(valhallaKnown!==null&&valhallaKnownPoint&&now-valhallaKnownAt<75000&&meters(pos,valhallaKnownPoint)<400){
+  limitDebugReason='valhalla_confirmed_hold';displayLimit(valhallaKnown);
+ }else{valhallaKnown=null;limitDebugReason='valhalla_waiting_for_match';displayLimit(null);}
+ if(valhallaBusy||valhallaTrace.length<3||now-valhallaLastRequest<30000)return;
+ valhallaBusy=true;valhallaLastRequest=now;
+ const sample=valhallaTrace.slice();
+ const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),12000);
  try{
-  // 0.71: awaryjne serwery tylko dla odczytu ograniczeń; bez zmiany dopasowania dróg.
-  // 0.74: dodatkowy niezależny serwer awaryjny dla zapytań o maxspeed.
-  const limitServers=['https://overpass.kumi.systems/api/interpreter','https://overpass-api.de/api/interpreter','https://overpass.private.coffee/api/interpreter','https://overpass.osm.ch/api/interpreter'];
-  let data=null,lastFetchError=null;
-  for(const endpoint of limitServers){
-   // 0.73: prosty GET zamiast POST; omija problemy z obsługą POST i preflight CORS.
-   // Każdy serwer nadal ma własny timeout; nie zgadujemy ograniczeń bez danych OSM.
-   const serverCtrl=new AbortController();
-   const serverTimer=setTimeout(()=>serverCtrl.abort(),18000);
-   try{
-    const url=endpoint+'?'+new URLSearchParams({data:query}).toString();
-    const response=await fetch(url,{method:'GET',signal:serverCtrl.signal});
-    if(!response.ok)throw Error('Overpass HTTP '+response.status);
-    const candidate=await response.json();
-    const usable=Array.isArray(candidate?.elements)?candidate.elements.filter(e=>e.type==='way'&&Array.isArray(e.geometry)&&e.geometry.length>1&&parseMaxspeed(e.tags?.maxspeed)!==null).length:0;
-    if(!usable){
-     labRecord('limit_server',{result:'empty',endpoint,transport:'GET',ways:0});
-     continue;
-    }
-    data=candidate;
-    labRecord('limit_server',{result:'ok',endpoint,transport:'GET',ways:usable});
-    break;
-   }catch(err){
-    lastFetchError=err;
-    labRecord('limit_server',{result:'error',endpoint,transport:'GET',error:String(err?.message||err?.name||err).slice(0,100)});
-   }finally{clearTimeout(serverTimer);}
+  const body={costing:'auto',shape_match:'map_snap',shape:sample,
+   filters:{action:'include',attributes:['edge.id','edge.speed_limit','edge.begin_shape_index','edge.end_shape_index','matched.point','matched.type','matched.edge_index','matched.distance_along_edge']}};
+  const response=await fetch(VALHALLA_LIMIT_URL,{method:'POST',headers:{'Content-Type':'application/json','X-Client-Id':'NaviPetrus'},body:JSON.stringify(body),signal:ctrl.signal});
+  if(!response.ok)throw Error('Valhalla HTTP '+response.status);
+  const data=await response.json();
+  const matches=Array.isArray(data.matched_points)?data.matched_points:[];
+  const edges=Array.isArray(data.edges)?data.edges:[];
+  const lastMatch=matches[matches.length-1];
+  const idx=lastMatch&&Number.isInteger(lastMatch.edge_index)?lastMatch.edge_index:-1;
+  const edge=idx>=0?edges[idx]:null;
+  const raw=edge?.speed_limit;
+  const speed=typeof raw==='number'&&Number.isFinite(raw)&&raw>=10&&raw<=160?Math.round(raw):null;
+  // Nie aktualizuj znaku ze starego zapytania, gdy auto jest już daleko.
+  const stillNear=gpsPoint&&meters(gpsPoint,[sample[sample.length-1].lat,sample[sample.length-1].lon])<110;
+  labRecord('limit_valhalla',{result:'ok',samples:sample.length,edges:edges.length,matched:matches.length,edgeIndex:idx,rawSpeedLimit:raw??null,limit:speed,stillNear:!!stillNear});
+  if(stillNear&&speed!==null){
+   valhallaKnown=speed;valhallaKnownAt=Date.now();valhallaKnownPoint=[...gpsPoint];
+   limitDebugReason='valhalla_confirmed';displayLimit(speed);
+  }else if(stillNear){
+   // Brak limitu nie jest sygnałem do zgadywania. Stary potwierdzony znak
+   // pozostaje jedynie w krótkim oknie ciągłości GPS.
+   limitDebugReason='valhalla_no_speed_limit';
   }
-  if(!data){
-   // Odpowiedź HTTP 200 bez odcinków maxspeed nie oznacza udanego pobrania.
-   // Zachowaj dotychczasowy cache i zapisz osobny wynik diagnostyczny.
-   if(lastFetchError)throw lastFetchError;
-   labRecord('limit_fetch',{result:'empty',ways:0,cacheWays:limitRoadCache.length,matched:false});
-   limitRetryAfter=Date.now()+90000;
-   return;
-  }
-  if(seq!==limitSequence)return;
-  const fresh=(data.elements||[]).filter(e=>e.type==='way'&&Array.isArray(e.geometry)&&e.geometry.length>1)
-   .map(e=>({id:e.id,speed:parseMaxspeed(e.tags?.maxspeed),geometry:e.geometry.map(p=>[p.lat,p.lon])}))
-   .filter(e=>e.speed!==null);
-  // Zachowaj wcześniej pobrane odcinki z innych fragmentów trasy, maksymalnie 500.
-  const merged=new Map(limitRoadCache.map(e=>[e.id,e]));
-  fresh.forEach(e=>merged.set(e.id,e));
-  limitRoadCache=Array.from(merged.values()).slice(-500);limitRoadCacheAt=Date.now();
-  const best=limitFromCache(gpsPoint||pos,accuracy);
-  labRecord('limit_fetch',{result:'ok',ways:fresh.length,cacheWays:limitRoadCache.length,matched:!!best});
-  if(best){limitConfirmed=best.speed;limitConfirmedAt=Date.now();limitConfirmedGeometry=best.geometry;limitDebugReason='fresh_osm_match';displayLimit(best.speed);}
-  else if(!limitStillValid(gpsPoint||pos,accuracy)){limitDebugReason='fresh_osm_no_match';limitConfirmed=null;limitConfirmedGeometry=null;displayLimit(null);}
  }catch(e){
-  limitRetryAfter=Date.now()+90000;
-  labRecord('limit_fetch',{result:'error',error:String(e?.name||e).slice(0,80),retrySeconds:90});
-  // Awaria serwera nie usuwa już pobranych danych OSM.
- }finally{limitRequestInFlight=false;}
+  labRecord('limit_valhalla',{result:'error',error:String(e?.message||e?.name||e).slice(0,110),samples:sample.length});
+ }finally{clearTimeout(timer);valhallaBusy=false;}
 }
 // 0.72: ostrożne dopasowanie WYŁĄCZNIE znacznika wizualnego do trasy.
 // Surowy GPS nadal służy do limitów, radarów, przeliczania i diagnostyki.
@@ -2163,12 +2146,12 @@ async function labInit(){
  try{labTotal=(await labReadAll()).length;labWarn5500=labTotal>=5500;labWarn5800=labTotal>=5800;labState()}catch(e){labState('Pamięć niedostępna: '+e.message)}
 }
 document.getElementById('labstart').onclick=async()=>{
- try{await labOpen();labSession=new Date().toISOString().replace(/[:.]/g,'-');labEnabled=true;labRecord('start',{version:'0.75',online:navigator.onLine,userAgent:navigator.userAgent});await labFlush();labState()}
+ try{await labOpen();labSession=new Date().toISOString().replace(/[:.]/g,'-');labEnabled=true;labRecord('start',{version:'0.76',online:navigator.onLine,userAgent:navigator.userAgent});await labFlush();labState()}
  catch(e){labState('Nie można uruchomić: '+e.message)}
 };
 document.getElementById('labstop').onclick=async()=>{labRecord('stop');labEnabled=false;await labFlush();labState()};
 document.getElementById('labexport').onclick=async()=>{
- try{const entries=await labReadAll();const payload={app:'NaviPetrus',version:'0.75',exportedAt:new Date().toISOString(),privacy:'Zawiera historię GPS — dane wrażliwe',events:entries};
+ try{const entries=await labReadAll();const payload={app:'NaviPetrus',version:'0.76',exportedAt:new Date().toISOString(),privacy:'Zawiera historię GPS — dane wrażliwe',events:entries};
  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
  const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='NaviPetrus_LAB_'+new Date().toISOString().slice(0,10)+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),10000);labState('Wyeksportowano '+entries.length)}catch(e){labState('Eksport nieudany: '+e.message)}
 };
