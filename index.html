@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#102236"><title>NaviPetrus 0.77</title>
+<meta name="theme-color" content="#102236"><title>NaviPetrus 0.78</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#102236;color:#fff}
@@ -364,7 +364,7 @@ body.driving.bearing-mode #map{transform:none!important;inset:0!important;width:
 <div id="cameraFeedback" aria-live="polite"><div class="question" id="cameraFeedbackQuestion">📷 Czy fotoradar jest?</div><div class="actions"><button type="button" id="cameraYes">✓ TAK</button><button type="button" id="cameraNo">✕ NIE</button></div></div>
 <button id="camerabtn" type="button" title="Pokaż fotoradary w okolicy GPS">📷 Radary</button>
 <div class="panel">
-<h1>🚗 NaviPetrus <small>PROTOTYP 0.77 • TEST</small></h1>
+<h1>🚗 NaviPetrus <small>PROTOTYP 0.78 • TEST</small></h1>
 <div class="fields">
 <input id="start" placeholder="Start: adres lub współrzędne" value="Moja pozycja GPS">
 <button class="secondary" id="gps" title="Ustaw start z GPS">📍 GPS</button>
@@ -1666,7 +1666,7 @@ function limitFromCache(pos,accuracy){
  if(!best||candidates.some(c=>c.distance-best.distance<12&&c.speed!==best.speed))return null;
  return best;
 }
-// 0.77 — Valhalla co 10 s zamiast 30 s; pozostałe funkcje bez zmian.
+// 0.78 — adaptacyjne podtrzymanie limitu na szybkich drogach; Valhalla co 10 s.
 // Nie zgaduj ograniczeń: bez jednoznacznego dopasowania zwracamy "?".
 let valhallaTrace=[],valhallaBusy=false,valhallaLastRequest=0;
 let valhallaKnown=null,valhallaKnownAt=0,valhallaKnownPoint=null;
@@ -1687,7 +1687,12 @@ async function refreshSpeedLimit(pos,accuracy){
  }
  const now=Date.now();
  // Utrzymujemy potwierdzony limit jedynie przy ciągłości śladu, nie bez końca.
- if(valhallaKnown!==null&&valhallaKnownPoint&&now-valhallaKnownAt<75000&&meters(pos,valhallaKnownPoint)<400){
+ // 0.78: przy szybkim ruchu 400 m moze minac przed kolejnym odczytem.
+ // Przy predkosci <=80 km/h zachowujemy 400 m, powyzej maks. 650 m.
+ // Bez nowego potwierdzenia Valhalli odleglosc nie jest odnawiana.
+ const gpsSpeedMps=lastGpsCoords?.speed;
+ const holdDistanceM=Number.isFinite(gpsSpeedMps)&&gpsSpeedMps>80/3.6?650:400;
+ if(valhallaKnown!==null&&valhallaKnownPoint&&now-valhallaKnownAt<75000&&meters(pos,valhallaKnownPoint)<holdDistanceM){
   limitDebugReason='valhalla_confirmed_hold';displayLimit(valhallaKnown);
  }else{valhallaKnown=null;limitDebugReason='valhalla_waiting_for_match';displayLimit(null);}
  if(valhallaBusy||valhallaTrace.length<3||now-valhallaLastRequest<10000)return;
@@ -2146,12 +2151,12 @@ async function labInit(){
  try{labTotal=(await labReadAll()).length;labWarn5500=labTotal>=5500;labWarn5800=labTotal>=5800;labState()}catch(e){labState('Pamięć niedostępna: '+e.message)}
 }
 document.getElementById('labstart').onclick=async()=>{
- try{await labOpen();labSession=new Date().toISOString().replace(/[:.]/g,'-');labEnabled=true;labRecord('start',{version:'0.77',online:navigator.onLine,userAgent:navigator.userAgent});await labFlush();labState()}
+ try{await labOpen();labSession=new Date().toISOString().replace(/[:.]/g,'-');labEnabled=true;labRecord('start',{version:'0.78',online:navigator.onLine,userAgent:navigator.userAgent});await labFlush();labState()}
  catch(e){labState('Nie można uruchomić: '+e.message)}
 };
 document.getElementById('labstop').onclick=async()=>{labRecord('stop');labEnabled=false;await labFlush();labState()};
 document.getElementById('labexport').onclick=async()=>{
- try{const entries=await labReadAll();const payload={app:'NaviPetrus',version:'0.77',exportedAt:new Date().toISOString(),privacy:'Zawiera historię GPS — dane wrażliwe',events:entries};
+ try{const entries=await labReadAll();const payload={app:'NaviPetrus',version:'0.78',exportedAt:new Date().toISOString(),privacy:'Zawiera historię GPS — dane wrażliwe',events:entries};
  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
  const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='NaviPetrus_LAB_'+new Date().toISOString().slice(0,10)+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),10000);labState('Wyeksportowano '+entries.length)}catch(e){labState('Eksport nieudany: '+e.message)}
 };
