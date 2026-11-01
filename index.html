@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#102236"><title>NaviPetrus 0.80</title>
+<meta name="theme-color" content="#102236"><title>NaviPetrus 0.81</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#102236;color:#fff}
@@ -364,7 +364,7 @@ body.driving.bearing-mode #map{transform:none!important;inset:0!important;width:
 <div id="cameraFeedback" aria-live="polite"><div class="question" id="cameraFeedbackQuestion">📷 Czy fotoradar jest?</div><div class="actions"><button type="button" id="cameraYes">✓ TAK</button><button type="button" id="cameraNo">✕ NIE</button></div></div>
 <button id="camerabtn" type="button" title="Pokaż fotoradary w okolicy GPS">📷 Radary</button>
 <div class="panel">
-<h1>🚗 NaviPetrus <small>PROTOTYP 0.80 • TEST</small></h1>
+<h1>🚗 NaviPetrus <small>PROTOTYP 0.81 • TEST</small></h1>
 <div class="fields">
 <input id="start" placeholder="Start: adres lub współrzędne" value="Moja pozycja GPS">
 <button class="secondary" id="gps" title="Ustaw start z GPS">📍 GPS</button>
@@ -1670,6 +1670,7 @@ function limitFromCache(pos,accuracy){
 // Nie zgaduj ograniczeń: bez jednoznacznego dopasowania zwracamy "?".
 let valhallaTrace=[],valhallaBusy=false,valhallaLastRequest=0;
 let valhallaKnown=null,valhallaKnownAt=0,valhallaKnownPoint=null;
+let valhallaDiagnosticEdgeId=null;
 const VALHALLA_LIMIT_URL='https://valhalla1.openstreetmap.de/trace_attributes';
 function valhallaCollect(pos,accuracy){
  if(!Number.isFinite(accuracy)||accuracy>35)return;
@@ -1710,6 +1711,25 @@ async function refreshSpeedLimit(pos,accuracy){
   // Nie aktualizuj znaku ze starego zapytania, gdy auto jest już daleko.
   const stillNear=gpsPoint&&meters(gpsPoint,[sample[sample.length-1].lat,sample[sample.length-1].lon])<110;
   labRecord('limit_valhalla',{result:'ok',samples:sample.length,edges:edges.length,matched:matches.length,edgeIndex:idx,rawSpeedLimit:raw??null,limit:speed,stillNear:!!stillNear});
+  // 0.81: dodatkowa diagnostyka dopasowania, bez wpływu na decyzję o znaku.
+  // Nie zapisujemy współrzędnych ani pełnej odpowiedzi Valhalli w tym zdarzeniu.
+  const matchType=typeof lastMatch?.type==='string'?lastMatch.type:null;
+  const edgeId=edge?.id===undefined||edge?.id===null?null:String(edge.id);
+  const previousEdgeId=valhallaDiagnosticEdgeId;
+  const matchClass=idx<0?'no_edge_match':!edge?'edge_missing':speed===null?'matched_without_limit':'matched_with_limit';
+  const edgeChanged=edgeId!==null&&previousEdgeId!==null&&edgeId!==previousEdgeId;
+  const distanceAlong=Number.isFinite(lastMatch?.distance_along_edge)?Math.round(lastMatch.distance_along_edge*1000)/1000:null;
+  const knownAgeS=valhallaKnownAt?Math.round((Date.now()-valhallaKnownAt)/1000):null;
+  const knownDistanceM=valhallaKnownPoint&&gpsPoint?Math.round(meters(gpsPoint,valhallaKnownPoint)):null;
+  labRecord('limit_match_diagnostic',{
+   matchClass,matchType,edgeId,previousEdgeId,edgeChanged,
+   edgeIndex:idx,edges:edges.length,matched:matches.length,
+   distanceAlong,rawSpeedLimit:raw??null,parsedLimit:speed,
+   gpsAccuracyM:Number.isFinite(accuracy)?Math.round(accuracy):null,
+   stillNear:!!stillNear,offRoute:!!offRouteConfirmed,
+   routeActive:!!activeTrip,knownLimit:valhallaKnown,knownAgeS,knownDistanceM
+  });
+  if(stillNear&&edgeId!==null)valhallaDiagnosticEdgeId=edgeId;
   if(stillNear&&speed!==null){
    valhallaKnown=speed;valhallaKnownAt=Date.now();valhallaKnownPoint=[...gpsPoint];
    limitDebugReason='valhalla_confirmed';displayLimit(speed);
@@ -2147,12 +2167,12 @@ async function labInit(){
  try{labTotal=(await labReadAll()).length;labWarn5500=labTotal>=5500;labWarn5800=labTotal>=5800;labState()}catch(e){labState('Pamięć niedostępna: '+e.message)}
 }
 document.getElementById('labstart').onclick=async()=>{
- try{await labOpen();labSession=new Date().toISOString().replace(/[:.]/g,'-');labEnabled=true;labRecord('start',{version:'0.80',online:navigator.onLine,userAgent:navigator.userAgent});await labFlush();labState()}
+ try{await labOpen();labSession=new Date().toISOString().replace(/[:.]/g,'-');labEnabled=true;labRecord('start',{version:'0.81',online:navigator.onLine,userAgent:navigator.userAgent});await labFlush();labState()}
  catch(e){labState('Nie można uruchomić: '+e.message)}
 };
 document.getElementById('labstop').onclick=async()=>{labRecord('stop');labEnabled=false;await labFlush();labState()};
 document.getElementById('labexport').onclick=async()=>{
- try{const entries=await labReadAll();const payload={app:'NaviPetrus',version:'0.80',exportedAt:new Date().toISOString(),privacy:'Zawiera historię GPS — dane wrażliwe',events:entries};
+ try{const entries=await labReadAll();const payload={app:'NaviPetrus',version:'0.81',exportedAt:new Date().toISOString(),privacy:'Zawiera historię GPS — dane wrażliwe',events:entries};
  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
  const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='NaviPetrus_LAB_'+new Date().toISOString().slice(0,10)+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),10000);labState('Wyeksportowano '+entries.length)}catch(e){labState('Eksport nieudany: '+e.message)}
 };
