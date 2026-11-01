@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#102236"><title>NaviPetrus 0.79</title>
+<meta name="theme-color" content="#102236"><title>NaviPetrus 0.80</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#102236;color:#fff}
@@ -364,7 +364,7 @@ body.driving.bearing-mode #map{transform:none!important;inset:0!important;width:
 <div id="cameraFeedback" aria-live="polite"><div class="question" id="cameraFeedbackQuestion">📷 Czy fotoradar jest?</div><div class="actions"><button type="button" id="cameraYes">✓ TAK</button><button type="button" id="cameraNo">✕ NIE</button></div></div>
 <button id="camerabtn" type="button" title="Pokaż fotoradary w okolicy GPS">📷 Radary</button>
 <div class="panel">
-<h1>🚗 NaviPetrus <small>PROTOTYP 0.79 • TEST</small></h1>
+<h1>🚗 NaviPetrus <small>PROTOTYP 0.80 • TEST</small></h1>
 <div class="fields">
 <input id="start" placeholder="Start: adres lub współrzędne" value="Moja pozycja GPS">
 <button class="secondary" id="gps" title="Ustaw start z GPS">📍 GPS</button>
@@ -1666,7 +1666,7 @@ function limitFromCache(pos,accuracy){
  if(!best||candidates.some(c=>c.distance-best.distance<12&&c.speed!==best.speed))return null;
  return best;
 }
-// 0.79 — powrot do bezpieczniejszego podtrzymania 400 m z 0.77; 0.78 odrzucona.
+// 0.80 — powrot do bezpieczniejszego podtrzymania 400 m z 0.77; 0.78 odrzucona.
 // Nie zgaduj ograniczeń: bez jednoznacznego dopasowania zwracamy "?".
 let valhallaTrace=[],valhallaBusy=false,valhallaLastRequest=0;
 let valhallaKnown=null,valhallaKnownAt=0,valhallaKnownPoint=null;
@@ -1714,9 +1714,10 @@ async function refreshSpeedLimit(pos,accuracy){
    valhallaKnown=speed;valhallaKnownAt=Date.now();valhallaKnownPoint=[...gpsPoint];
    limitDebugReason='valhalla_confirmed';displayLimit(speed);
   }else if(stillNear){
-   // Brak limitu nie jest sygnałem do zgadywania. Stary potwierdzony znak
-   // pozostaje jedynie w krótkim oknie ciągłości GPS.
-   limitDebugReason='valhalla_no_speed_limit';
+   // 0.80: aktualne dopasowanie bez limitu unieważnia poprzedni znak.
+   // Bez tego 90 km/h mogło pozostać po wjechaniu na drogę bez danych.
+   valhallaKnown=null;valhallaKnownAt=0;valhallaKnownPoint=null;
+   limitDebugReason='valhalla_no_speed_limit';displayLimit(null);
   }
  }catch(e){
   labRecord('limit_valhalla',{result:'error',error:String(e?.message||e?.name||e).slice(0,110),samples:sample.length});
@@ -2146,12 +2147,12 @@ async function labInit(){
  try{labTotal=(await labReadAll()).length;labWarn5500=labTotal>=5500;labWarn5800=labTotal>=5800;labState()}catch(e){labState('Pamięć niedostępna: '+e.message)}
 }
 document.getElementById('labstart').onclick=async()=>{
- try{await labOpen();labSession=new Date().toISOString().replace(/[:.]/g,'-');labEnabled=true;labRecord('start',{version:'0.79',online:navigator.onLine,userAgent:navigator.userAgent});await labFlush();labState()}
+ try{await labOpen();labSession=new Date().toISOString().replace(/[:.]/g,'-');labEnabled=true;labRecord('start',{version:'0.80',online:navigator.onLine,userAgent:navigator.userAgent});await labFlush();labState()}
  catch(e){labState('Nie można uruchomić: '+e.message)}
 };
 document.getElementById('labstop').onclick=async()=>{labRecord('stop');labEnabled=false;await labFlush();labState()};
 document.getElementById('labexport').onclick=async()=>{
- try{const entries=await labReadAll();const payload={app:'NaviPetrus',version:'0.79',exportedAt:new Date().toISOString(),privacy:'Zawiera historię GPS — dane wrażliwe',events:entries};
+ try{const entries=await labReadAll();const payload={app:'NaviPetrus',version:'0.80',exportedAt:new Date().toISOString(),privacy:'Zawiera historię GPS — dane wrażliwe',events:entries};
  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
  const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='NaviPetrus_LAB_'+new Date().toISOString().slice(0,10)+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),10000);labState('Wyeksportowano '+entries.length)}catch(e){labState('Eksport nieudany: '+e.message)}
 };
